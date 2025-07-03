@@ -1,6 +1,7 @@
-import { Redirect, Stack } from "expo-router";
-
+import { Redirect, SplashScreen, Stack } from "expo-router";
 import { useAuth } from "@/context/supabase-provider";
+import { ActivityIndicator } from "react-native";
+import { useEffect } from "react";
 
 export const unstable_settings = {
 	initialRouteName: "(tabs)",
@@ -9,6 +10,14 @@ export const unstable_settings = {
 export default function ProtectedLayout() {
 	const { initialized, session } = useAuth();
 
+	useEffect(() => {
+    if (!initialized) {
+      SplashScreen.preventAutoHideAsync();
+    } else {
+      SplashScreen.hideAsync();
+    }
+  }, [initialized]);
+	
 	if (!initialized) {
 		return null;
 	}

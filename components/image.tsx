@@ -5,4 +5,4 @@ const StyledImage = cssInterop(Image, {
 	className: "style",
 });
 
-export { StyledImage as Image };
+export { StyledImage as ImageTemplate };
