@@ -10,7 +10,6 @@ const _layout = () => {
       screenOptions={{
         tabBarActiveTintColor: '#4600DE',
         tabBarInactiveTintColor: '#999',
-
         headerTitleAlign: 'center',
         // headerTitle: () => <LiftLogicLogo width={90} height={30} />,
 
@@ -88,13 +87,13 @@ const _layout = () => {
         }}
       />
       <Tabs.Screen
-        name="musclegroups"
+        name="exercises2"
         options={{
           href: null,
         }}
       />
       <Tabs.Screen
-        name="muscles"
+        name="exercises3"
         options={{
           href: null,
         }}

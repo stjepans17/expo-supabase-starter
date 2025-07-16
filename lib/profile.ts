@@ -9,6 +9,5 @@ export const fetchProfileById = async (userId: string) => {
   
   if (error) throw error;
 
-  console.log('Profile fetched:', data);
   return data; 
 };

@@ -4,8 +4,8 @@ import { ScreenWrapperProps } from "@/types";
 
 let { height } = Dimensions.get('window');
 
-const ScreenWrapper = ({ style, children }: ScreenWrapperProps) => {
-    let paddingTop = Platform.OS == 'ios' ? height * 0.06 : 50;
+const ScreenWrapperMinMargin = ({ style, children }: ScreenWrapperProps) => {
+    let paddingTop = 0;
     return (
         <View style={[
             {
@@ -24,4 +24,4 @@ const ScreenWrapper = ({ style, children }: ScreenWrapperProps) => {
     )
 }
 
-export default ScreenWrapper;
+export default ScreenWrapperMinMargin;

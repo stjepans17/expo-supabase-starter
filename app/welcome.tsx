@@ -1,5 +1,5 @@
-import React from "react";
-import { View, StyleSheet, Image } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { ImageTemplate } from "@/components/image";
 import { SafeAreaView } from "@/components/safe-area-view";
@@ -13,18 +13,114 @@ import Typo from "@/components/mine/Typo";
 import ScreenWrapper from "@/components/mine/ScreenWrapper";
 import Button from "@/components/mine/Button";
 import { SocialIcon } from 'react-native-elements';
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import { getDefaultReturnUrl, makeRedirectUri } from "expo-auth-session";
+import { getQueryParams } from "expo-auth-session/build/QueryParams";
+import { supabase } from "@/config/supabase";
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { colorScheme } = useColorScheme();
+  const [callbackUrl, setCallbackUrl] = useState<string | null>(null);
   const appIcon =
     colorScheme === "dark"
       ? require("@/assets/icon.png")
       : require("@/assets/icon-dark.png");
 
+  // Build redirect URI using your app scheme defined in app.json
+  // const redirectUri = makeRedirectUri({ scheme: 'expo-supabase-starter' });
+  const redirectUri = getDefaultReturnUrl();
+
+  useEffect(() => {
+    // handle initial URL
+    Linking.getInitialURL().then(url => {
+      if (url) setCallbackUrl(url);
+    });
+    // subscription for future URLs
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      setCallbackUrl(url);
+    });
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // Process OAuth callback
+  useEffect(() => {
+    if (!callbackUrl) return;
+    const { params, errorCode } = getQueryParams(callbackUrl);
+    if (errorCode) {
+      Alert.alert('Auth error', errorCode);
+      return;
+    }
+    const { access_token, refresh_token, error } = params;
+    if (error) {
+      Alert.alert('Auth error', error);
+      return;
+    }
+    if (access_token && refresh_token) {
+      supabase.auth
+        .setSession({ access_token, refresh_token })
+        .then(({ error }) => {
+          if (error) Alert.alert('Auth error', error.message);
+          else router.replace('/');
+        });
+    }
+  }, [callbackUrl]);
+
+  // Kick off Supabase OAuth flow
   const signInWithGoogle = async () => {
-    console.log('click');
-  }
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: redirectUri, skipBrowserRedirect: true },
+    });
+    if (error) {
+      Alert.alert('Error', error.message);
+      return;
+    }
+    await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+  };
+
+  // Handle deep link redirect back into the app
+  // const url = Linking.useURL();
+  // useEffect(() => {
+  //   if (url) {
+  //     const { params, errorCode } = getQueryParams(url);
+  //     if (errorCode) {
+  //       Alert.alert('Auth error', errorCode);
+  //       return;
+  //     }
+  //     const { access_token, refresh_token, error } = params;
+  //     if (error) {
+  //       Alert.alert('Auth error', error);
+  //       return;
+  //     }
+  //     if (access_token && refresh_token) {
+  //       supabase.auth
+  //         .setSession({ access_token, refresh_token })
+  //         .then(({ error }) => {
+  //           if (error) Alert.alert('Auth error', error.message);
+  //           else router.replace('/');
+  //         });
+  //     }
+  //   }
+  // }, [url]);
+
+  // // Kick off Supabase OAuth flow
+  // const signInWithGoogle = async () => {
+  //   const { data, error } = await supabase.auth.signInWithOAuth({
+  //     provider: 'google',
+  //     options: { redirectTo: redirectUri, skipBrowserRedirect: true },
+  //   });
+  //   if (error) {
+  //     Alert.alert('Error', error.message);
+  //     return;
+  //   }
+  //   await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
+  // };
 
   return (
     <ScreenWrapper>
@@ -174,10 +270,22 @@ const styles = StyleSheet.create({
   buttonPurple: {
     backgroundColor: "#4600DE",
     width: "80%",
+    borderRadius: 8,
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOpacity: 0.8,
+    elevation: 6,
+    shadowRadius: 15,
+    shadowOffset: { width: 1, height: 16 },
   },
   buttonWhite: {
     backgroundColor: "#F2F2F0",
     width: "80%",
+    borderRadius: 8,
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOpacity: 0.8,
+    elevation: 6,
+    shadowRadius: 15,
+    shadowOffset: { width: 1, height: 16 },
   },
   // ---- new Google button styles ----
   buttonGoogle: {
@@ -204,143 +312,59 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "90%",
   },
-  socialButton: { 
-    flex: 1, 
+  socialButton: {
+    flex: 1,
     borderRadius: 8,
     height: '10%',
-    width: '90%'
+    width: '90%',
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOpacity: 0.9,
+    elevation: 6,
+    shadowRadius: 15,
+    shadowOffset: { width: 1, height: 16 },
   }
 });
 
-// import React, { useEffect } from "react";
-// import { View, StyleSheet, Image, Alert } from "react-native";
-// import { useRouter } from "expo-router";
-// import * as WebBrowser from "expo-web-browser";
-// import * as Linking from "expo-linking";
-// import { makeRedirectUri } from "expo-auth-session";
-// import { getQueryParams } from "expo-auth-session/build/QueryParams";
-
-// import { ImageTemplate } from "@/components/image";
-// import ScreenWrapper from "@/components/mine/ScreenWrapper";
-// import AnimatedHeading from "@/components/mine/AnimatedHeading";
-// import Typo from "@/components/mine/Typo";
-// import Button from "@/components/mine/Button";
-// import { spacingX } from "@/constants/spacings";
-// import { useColorScheme } from "@/lib/useColorScheme";
-// import { supabase } from "@/config/supabase";
-// import { SocialIcon } from 'react-native-elements';
-
-// WebBrowser.maybeCompleteAuthSession();
-
-// export default function WelcomeScreen() {
-//   const router = useRouter();
-//   const { colorScheme } = useColorScheme();
-
-//   // Build redirect URI using your app scheme defined in app.json
-//   // const redirectUri = makeRedirectUri({ scheme: 'expo-supabase-starter' });
-//   const redirectUri = makeRedirectUri({ useProxy: true });
-
-
-//   // Handle deep link redirect back into the app
-//   const url = Linking.useURL();
-//   useEffect(() => {
-//     if (url) {
-//       const { params, errorCode } = getQueryParams(url);
-//       if (errorCode) {
-//         Alert.alert('Auth error', errorCode);
-//         return;
-//       }
-//       const { access_token, refresh_token, error } = params;
-//       if (error) {
-//         Alert.alert('Auth error', error);
-//         return;
-//       }
-//       if (access_token && refresh_token) {
-//         supabase.auth
-//           .setSession({ access_token, refresh_token })
-//           .then(({ error }) => {
-//             if (error) Alert.alert('Auth error', error.message);
-//             else router.replace('/');
-//           });
-//       }
-//     }
-//   }, [url]);
-
-//   // Kick off Supabase OAuth flow
-//   const signInWithGoogle = async () => {
-//     const { data, error } = await supabase.auth.signInWithOAuth({
-//       provider: 'google',
-//       options: { redirectTo: redirectUri, skipBrowserRedirect: true },
-//     });
-//     if (error) {
-//       Alert.alert('Error', error.message);
-//       return;
-//     }
-//     await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-//   };
-
+// import {
+//   GoogleSignin,
+//   GoogleSigninButton,
+//   statusCodes,
+// } from '@react-native-google-signin/google-signin'
+// import { supabase } from '@/config/supabase'
+// export default function () {
+//   GoogleSignin.configure({
+//     scopes: ['https://www.googleapis.com/auth/drive.readonly'],
+//     webClientId: 'YOUR CLIENT ID FROM GOOGLE CONSOLE',
+//   })
 //   return (
-//     <ScreenWrapper>
-//       <View style={styles.container}>
-//         <View style={styles.innerContainer}>
-//           <View style={styles.header}>
-//             <ImageTemplate
-//               source={require('@/assets/liftlogic.svg')}
-//               resizeMode="contain"
-//               style={styles.logoImage}
-//             />
-//           </View>
-//           <View style={styles.main}>
-//             <Image
-//               source={require('@/assets/mockup_phone.png')}
-//               resizeMode="contain"
-//               style={styles.phoneImage}
-//             />
-//             <AnimatedHeading />
-//           </View>
-//           <View style={styles.footer}>
-//             <View style={styles.footerRow}>
-//               <Button style={styles.buttonPurple} onPress={() => router.push("/sign-up")}>               
-//                 <Typo size={22} color="white" fontWeight="800" style={{ letterSpacing: -0.72 }}>
-//                   Sign Up
-//                 </Typo>
-//               </Button>
-//               <Button style={styles.buttonWhite} onPress={() => router.push("/sign-in")}>
-//                 <Typo size={22} color="#4600DE" fontWeight="300" style={{ letterSpacing: -0.72 }}>
-//                   Log In
-//                 </Typo>
-//               </Button>
-//             </View>
-//             <View style={styles.footerRow}>
-//               <SocialIcon
-//                 title="Sign in with Google"
-//                 button
-//                 type="google"
-//                 onPress={signInWithGoogle}
-//                 style={styles.socialButton}
-//               />
-//             </View>
-//           </View>
-//         </View>
-//       </View>
-//     </ScreenWrapper>
-//   );
+//     <GoogleSigninButton
+//       size={GoogleSigninButton.Size.Wide}
+//       color={GoogleSigninButton.Color.Dark}
+//       onPress={async () => {
+//         try {
+//           await GoogleSignin.hasPlayServices()
+//           const userInfo = await GoogleSignin.signIn()
+//           if (userInfo.data && userInfo.data.idToken) {
+//             const { data, error } = await supabase.auth.signInWithIdToken({
+//               provider: 'google',
+//               token: userInfo.data.idToken,
+//             })
+//             console.log(error, data)
+//           } else {
+//             throw new Error('no ID token present!')
+//           }
+//         } catch (error: any) {
+//           if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+//             // user cancelled the login flow
+//           } else if (error.code === statusCodes.IN_PROGRESS) {
+//             // operation (e.g. sign in) is in progress already
+//           } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+//             // play services not available or outdated
+//           } else {
+//             // some other error happened
+//           }
+//         }
+//       }}
+//     />
+//   )
 // }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FFFFFF" },
-//   innerContainer: { height: "95%", width: "90%", alignItems: "center", justifyContent: "center", marginBottom: spacingX._15 },
-//   logoImage: { width: "50%", height: "50%" },
-//   header: { flex: 1, justifyContent: "center", alignItems: "center", width: "100%" },
-//   main: { flex: 6, justifyContent: "center", alignItems: "center", width: "100%" },
-//   phoneImage: { width: "100%", marginRight: spacingX._10, flex: 3 },
-//   footer: { flex: 2, width: "100%", justifyContent: "space-between" },
-//   footerRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginBottom: 10 },
-//   buttonPurple: { flex: 1, backgroundColor: "#4600DE", marginRight: 10 },
-//   buttonWhite: { flex: 1, backgroundColor: "#F2F2F0", marginLeft: 10 },
-//   continueText: { flex: 2, textAlign: "center" },
-//   buttonGoogle: { flex: 1, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: "#4600DE" },
-//   socialButton: { flex: 1, height: 48, borderRadius: 8 }
-// });
-
-

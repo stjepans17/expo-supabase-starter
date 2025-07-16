@@ -33,6 +33,14 @@ export type Muscle = {
     description?: string
 }
 
+export type Exercise = {
+    id: number;
+    name: string;
+    muscleid: number;
+    description?: string;
+    imagekey?: string;
+}
+
 export type MuscleGroup = {
     id: number
     name: string 

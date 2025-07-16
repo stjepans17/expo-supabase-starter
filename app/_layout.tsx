@@ -38,17 +38,19 @@ export default function AppLayout() {
 					options={{
 						presentation: "modal",
 						headerShown: true,
-						headerTitle: "Sign In",
+						headerTitle: "liftlogic",
 						headerStyle: {
 							backgroundColor:
-								colorScheme === "dark"
-									? colors.dark.background
-									: colors.light.background,
+								// colorScheme === "dark"
+								// 	? colors.dark.background
+								// 	: colors.light.background,
+								colors.light.background
 						},
 						headerTintColor:
-							colorScheme === "dark"
-								? colors.dark.foreground
-								: colors.light.foreground,
+						colors.light.foreground,
+							// colorScheme === "dark"
+							// 	? colors.dark.foreground
+							// 	: colors.light.foreground,
 						gestureEnabled: true,
 					}}
 				/>

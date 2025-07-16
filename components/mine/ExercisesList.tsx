@@ -1,17 +1,18 @@
+import { Exercise } from '@/types';
 import React from 'react';
 import { ScrollView, View, Text, StyleSheet } from 'react-native';
 
-interface WorkoutListProps {
-    workouts: string[];
+interface ExercisesListProps {
+    exercises: Exercise[];
 }
 
-const WorkoutList: React.FC<WorkoutListProps> = ({ workouts }) => {
+const ExercisesList: React.FC<ExercisesListProps> = ({ exercises }) => {
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
-            {workouts.map((workout, index) => (
-                <View style={styles.item} key={index}>
+            {exercises.map((exercise) => (
+                <View style={styles.item} key={exercise.id}>
                     <View style={styles.iconPlaceholder} />
-                    <Text style={styles.itemText}>{workout}</Text>
+                    <Text style={styles.itemText}>{exercise.name}</Text>
                 </View>
             ))}
         </ScrollView>
@@ -47,4 +48,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default WorkoutList;
+export default ExercisesList;

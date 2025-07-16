@@ -156,7 +156,7 @@ import { spacingX, spacingY } from '@/constants/spacings';
 import { fetchMusclesByMuscleGroupId } from '@/lib/muscle';
 import { MuscleGroup, Muscle } from '@/types';
 import Typo from '@/components/mine/Typo';
-import { Router } from 'expo-router';
+import { router } from 'expo-router';
 
 const initialData: MuscleGroup[] = [
   {
@@ -194,9 +194,14 @@ const initialData: MuscleGroup[] = [
 const exercises = () => {
   const [loading, setLoading] = useState(false);
 
-  const handleMusclePress = (muscle: Muscle) => {
-    // Handle muscle selection - navigate to exercises or whatever you need
-    console.log('Selected muscle:', muscle);
+  const handleMuscleGroupPress = (muscleGroupId: number, muscleGroupName: string) => {
+    router.push({
+      pathname: '/exercises2',
+      params: { 
+        muscleGroupId: muscleGroupId.toString(),
+        muscleGroupName: muscleGroupName
+      }
+    });
   };
 
   return (
@@ -206,13 +211,13 @@ const exercises = () => {
           <View style={styles.contentColumn}>
             <ExerciseBox
               title='Abs & Core'
-              onPress={() => console.log('click')}
+              onPress={() => handleMuscleGroupPress(6, 'Abs & Core')}
             />
           </View>
           <View style={styles.contentColumn}>
             <ExerciseBox
               title='Arms'
-              onPress={() => console.log('click')}
+              onPress={() => handleMuscleGroupPress(3, 'Arms')}
             />
           </View>
         </View>
@@ -220,17 +225,30 @@ const exercises = () => {
           <View style={styles.contentColumn}>
             <ExerciseBox
               title='Back'
-              onPress={() => console.log('click')}
+              onPress={() => handleMuscleGroupPress(2, 'Back')}
             />
           </View>
           <View style={styles.contentColumn}>
             <ExerciseBox
               title='Chest'
-              onPress={() => console.log('click')}
+              onPress={() => handleMuscleGroupPress(1, 'Chest')}
             />
           </View>
         </View>
-        <View style={styles.contentRow}></View>
+        <View style={styles.contentRow}>
+           <View style={styles.contentColumn}>
+            <ExerciseBox
+              title='Legs'
+              onPress={() => handleMuscleGroupPress(5, 'Legs')}
+            />
+          </View>
+          <View style={styles.contentColumn}>
+            <ExerciseBox
+              title='Shoulders'
+              onPress={() => handleMuscleGroupPress(4, 'Shoulders')}
+            />
+          </View>
+        </View>
         <View style={styles.contentRow}></View>
         <View style={styles.contentRow}></View>
       </View>
