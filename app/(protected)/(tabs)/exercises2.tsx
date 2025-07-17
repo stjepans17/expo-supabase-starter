@@ -9,15 +9,16 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Typo from '@/components/mine/Typo';
 import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSwipeBack } from '@/hooks/useSwipeBack';
+import ScreenWrapperMidMargin from '@/components/mine/ScreenWrapperMidMargin';
 
 const Exercises2 = () => {
   const { swipeGesture } = useSwipeBack();
-  const { muscleGroupId, muscleGroupName } = useLocalSearchParams();
+  const { muscleGroupId } = useLocalSearchParams();
 
   const [muscles, setMuscles] = useState<Muscle[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const handlePress = (muscleId: number) => {
+  function handlePress(muscleId: number) {
       router.push({
         pathname: '/exercises3',
         params: { 
@@ -36,8 +37,8 @@ const Exercises2 = () => {
 
   async function loadMuscles() {
     setLoading(true);
-    try {
 
+    try {
       const fetchedMuscles = await fetchMusclesByMuscleGroupId(Number(muscleGroupId));
       setMuscles(fetchedMuscles);
     } catch (error) {
@@ -60,7 +61,7 @@ const Exercises2 = () => {
   return (
     <GestureHandlerRootView>
       <GestureDetector gesture={swipeGesture}>
-        <ScreenWrapper>
+        <ScreenWrapperMidMargin>
           <View style={styles.wrapper} collapsable={false}>
             <View style={styles.contentRow}>
               <View style={styles.contentColumn}>
@@ -119,7 +120,7 @@ const Exercises2 = () => {
             <View style={styles.contentRow}></View>
             <View style={styles.contentRow}></View>
           </View>
-        </ScreenWrapper>
+        </ScreenWrapperMidMargin>
       </GestureDetector>
     </GestureHandlerRootView>
   );
