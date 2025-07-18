@@ -11,6 +11,16 @@ const _layout = () => {
         tabBarActiveTintColor: '#4600DE',
         tabBarInactiveTintColor: '#999',
         headerTitleAlign: 'center',
+        headerStyle: {
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: -1,
+          },
+          shadowOpacity: 0.1,
+          shadowRadius: 10.3,
+          elevation: 5, // Android shadow
+        },
         // headerTitle: () => <LiftLogicLogo width={90} height={30} />,
 
         headerLeft: () => (
