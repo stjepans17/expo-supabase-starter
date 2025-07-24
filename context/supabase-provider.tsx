@@ -123,14 +123,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
 		}
 	};
 
-	useEffect(() => {
-		if (session?.user?.id) {
-			fetchProfileById(session.user.id).then(setProfile);
-		} else {
-			setProfile(null);
-		}
-	}, [session]);
-
 	return (
 		<AuthContext.Provider
 			value={{

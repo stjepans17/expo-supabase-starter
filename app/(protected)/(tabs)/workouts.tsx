@@ -1,74 +1,69 @@
-// import { ScrollView, StyleSheet, Text, View } from 'react-native'
-// import React, { useState } from 'react'
-// import ScreenWrapper from '@/components/mine/ScreenWrapper'
-// import { spacingX } from '@/constants/spacings'
-// import Typo from '@/components/mine/Typo'
-// import ScreenWrapperMinMargin from '@/components/mine/ScreenWrapperMinMargin'
-
-// const workouts = () => {
-
-//   const [view, setView] = useState<string>("Workouts");
-
-//   return (
-//     <ScreenWrapperMinMargin style={{backgroundColor: '#F2F2F0', justifyContent: 'flex-start', alignItems: 'stretch' }}>
-//       <View style={styles.wrapper}>
-//         <View style={styles.header}>
-
-//         </View>
-//         <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
-//         </ScrollView>
-//       </View>
-//     </ScreenWrapperMinMargin>
-//   )
-// }
-
-// export default workouts
-
-// const styles = StyleSheet.create({
-//   wrapper: {
-//     width: '100%',
-//     // marginBottom: spacingX._15,
-//     // alignItems: 'flex-start',
-//     // justifyContent: 'flex-start',
-//     flex: 1,
-//     flexDirection: 'column',
-//   },
-//   header: {
-//     flex: 1,
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     backgroundColor: '#FFF',
-//     // boxShadow: '0px -1px 12.3px 0px rgba(0, 0, 0, 0.25);'
-//   },
-//   scrollArea: {
-//     flex: 5,
-//     backgroundColor: 'green'
-//   },
-//   innerWrapper: {
-//     justifyContent: 'center',
-//     alignItems: 'center',
-//     width: '90%',
-//     height: '90%',
-//   },
-//   scrollContent: {
-//     flexGrow: 1,           // keep it from collapsing if empty
-//     padding: 16,
-//   },
-// })
-
-import { ScrollView, StyleSheet, Text, View, Dimensions, TouchableOpacity } from 'react-native'
-import React, { useState } from 'react'
+import { ScrollView, StyleSheet, Text, View, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native'
+import React, { useEffect, useState } from 'react'
 import ScreenWrapper from '@/components/mine/ScreenWrapper'
 import { spacingX } from '@/constants/spacings'
 import Typo from '@/components/mine/Typo'
 import ScreenWrapperMinMargin from '@/components/mine/ScreenWrapperMinMargin'
-
-const { height: screenHeight } = Dimensions.get('window');
+import { Workout } from '@/types'
+import ViewBox from '@/components/mine/ViewBox'
+import { fetchExercisesLengthFromWorkoutId, fetchWorkoutByUserId } from '@/lib/workout';
+import { useAuth } from "@/context/supabase-provider";
+import PlusIcon from '@/assets/PlusIcon.svg'
+import { router } from 'expo-router'
 
 const workouts = () => {
+  const { session } = useAuth();
 
   const [view, setView] = useState<string>("Workouts");
+  const [dummyWorkouts, setDummyWorkouts] = useState<Workout[] | null>();
+  const [favoriteWorkouts, setFavoriteWorkouts] = useState<Workout[] | null>();
+  const [exerciseCounts, setExerciseCounts] = useState<{ [key: string]: number }>({});
+  const [loading, setLoading] = useState<boolean>(false);
+
+  function handleViewBoxPress() {
+    router.push('/active-workout');
+  }
+
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+
+      if (!session?.user.id) {
+        return;
+      }
+
+      const workoutsResult = await fetchWorkoutByUserId(session?.user.id);
+      setDummyWorkouts(workoutsResult);
+
+      // Then fetch exercise counts for all workouts
+      if (workoutsResult && workoutsResult.length > 0) {
+        const countsPromises = workoutsResult.map(async (workout) => {
+          const count = await fetchExercisesLengthFromWorkoutId(workout.id);
+          return { workoutId: workout.id, count };
+        });
+
+        const counts = await Promise.all(countsPromises);
+        const countsObject = counts.reduce((acc, { workoutId, count }) => {
+          acc[workoutId] = count ?? 0;
+          return acc;
+        }, {} as { [key: string]: number });
+
+        setExerciseCounts(countsObject);
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" />
+        </View>
+      </ScreenWrapper>
+    )
+  }
 
   return (
     <ScreenWrapperMinMargin style={{ backgroundColor: '#F2F2F0', justifyContent: 'flex-start', alignItems: 'stretch' }}>
@@ -95,52 +90,43 @@ const workouts = () => {
           <View style={styles.mainInnerWrapper}>
             <View style={styles.mainTitleWrapper}>
               <Typo style={styles.mainTitle}>Your {view}</Typo>
+              <TouchableOpacity>
+                <PlusIcon width={50} height={25}/>
+              </TouchableOpacity>
             </View>
             <View style={styles.mainContentWrapper}>
-              <View style={styles.mainCategorySection}>
-                <View style={styles.mainCategoryTitleWrapper}>
-                  <Typo style={styles.title}>Favorites</Typo>
-                </View>
-                <ScrollView contentContainerStyle={styles.mainCategoryContentWrapper} horizontal={true}>
-                  <View style={styles.mainSubcontentWrapper}>
-                    <View style={styles.viewBox}>
-
-                    </View>
+              {favoriteWorkouts &&
+                <View style={styles.mainCategorySection}>
+                  <View style={styles.mainCategoryTitleWrapper}>
+                    <Typo style={styles.title}>Favorites</Typo>
                   </View>
-                  <View style={styles.mainSubcontentWrapper}>
-                    <View style={styles.viewBox}>
-
-                    </View>
-                  </View>
-                </ScrollView>
-              </View>
+                  <ScrollView contentContainerStyle={styles.mainCategoryContentWrapper} horizontal={true}>
+                    {favoriteWorkouts?.map((workoutData, index) => (
+                      <View key={index} style={styles.mainSubcontentWrapper}>
+                        <ViewBox workoutData={workoutData} exerciseCount={exerciseCounts[workoutData.id]} />
+                      </View>
+                    ))}
+                  </ScrollView>
+                </View>}
               <View style={styles.mainCategorySection}>
                 <View style={styles.mainCategoryTitleWrapper}>
                   <Typo style={styles.title}>Specific Category #1</Typo>
                 </View>
-                <View style={styles.mainCategoryContentWrapper}>
-                  <View style={styles.mainSubcontentWrapper}>
-                    {/* todo: convert viewBox to component */}
-                    <TouchableOpacity style={styles.viewBox}>
-                      <View style={styles.viewBoxMain}>
-                        <View style={styles.viewBoxInner}>
-                          <Typo style={styles.infoTextTitle}>Push Workout</Typo>
-                          <Typo style={styles.infoTextSubtitle}>5 exercises</Typo>
-                        </View>
-                      </View>
-                      <View style={styles.viewBoxBottom}>
-                        <View style={styles.viewBoxInner}>
-                          <Typo style={styles.infoText}>60 min</Typo>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
-                  <View style={styles.mainSubcontentWrapper}>
-                    <View style={styles.viewBox}>
-
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.mainCategoryContentWrapper}
+                >
+                  {dummyWorkouts?.map((workoutData, index) => (
+                    <View key={index} style={styles.mainSubcontentWrapper}>
+                      <ViewBox
+                        workoutData={workoutData}
+                        exerciseCount={exerciseCounts[workoutData.id]}
+                        onPress={() => handleViewBoxPress()}
+                      />
                     </View>
-                  </View>
-                </View>
+                  ))}
+                </ScrollView>
               </View>
               <View style={styles.mainCategorySection}>
                 <View style={styles.mainCategoryTitleWrapper}>
@@ -174,6 +160,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     flexDirection: 'column',
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   header: {
     height: '10%',
@@ -251,9 +242,11 @@ const styles = StyleSheet.create({
   },
   mainTitleWrapper: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    marginBottom: spacingX._20
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginBottom: spacingX._20,
+    flexDirection: 'row',
+    gap: '1%'
   },
   mainContentWrapper: {
     flex: 8
@@ -272,21 +265,27 @@ const styles = StyleSheet.create({
   mainCategoryContentWrapper: {
     flex: 8,
     width: '100%',
-    justifyContent: 'center',
-    alignContent: 'center',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
     flexDirection: 'row'
   },
   mainCategoryContentWrapperHorizontal: {
-    justifyContent: 'center',
+    // justifyContent: 'center',
     alignContent: 'center',
     flexDirection: 'row',
     paddingHorizontal: 10,
+
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
   },
   mainSubcontentWrapper: {
-    flex: 1,
+    // flex: 1,
+    flexGrow: 0,         
+    flexShrink: 0,       
     justifyContent: 'center',
     alignItems: 'flex-start',
-    minWidth: Dimensions.get('window').width * 0.23
+    minWidth: Dimensions.get('window').width * 0.4,
+    width: Dimensions.get('window').width * 0.45
   },
   viewBox: {
     backgroundColor: 'white',

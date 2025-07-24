@@ -5,7 +5,7 @@ import { ScreenWrapperProps } from "@/types";
 let { height } = Dimensions.get('window');
 
 const ScreenWrapperMidMargin = ({ style, children }: ScreenWrapperProps) => {
-    let paddingTop = Platform.OS == 'ios' ? height * 0.03 : 25;
+    let paddingTop = Platform.OS == 'ios' ? height * 0.05 : 25;
     return (
         <View style={[
             {

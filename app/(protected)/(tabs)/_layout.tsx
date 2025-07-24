@@ -2,7 +2,8 @@ import { router, Tabs } from 'expo-router';
 import * as Icons from 'phosphor-react-native';
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-// import LiftLogicLogo from '../../assets/images/liftlogic.svg';
+import LiftLogicLogo from '@/assets/liftlogic.svg';
+import { spacingX } from '@/constants/spacings';
 
 const _layout = () => {
   return (
@@ -21,7 +22,7 @@ const _layout = () => {
           shadowRadius: 10.3,
           elevation: 5, // Android shadow
         },
-        // headerTitle: () => <LiftLogicLogo width={90} height={30} />,
+        headerTitle: () => <LiftLogicLogo width={80} height={30} style={{marginTop: spacingX._3}}/>,
 
         headerLeft: () => (
           <TouchableOpacity
@@ -104,6 +105,12 @@ const _layout = () => {
       />
       <Tabs.Screen
         name="exercises3"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="active-workout"
         options={{
           href: null,
         }}

@@ -6,7 +6,6 @@ import { SafeAreaView } from "@/components/safe-area-view";
 import { Text } from "@/components/ui/text";
 import { H1, Muted } from "@/components/ui/typography";
 import { useColorScheme } from "@/lib/useColorScheme";
-import LiftLogicLogo from "@/assets/liftlogic.svg";
 import { spacingX } from "@/constants/spacings";
 import AnimatedHeading from "@/components/mine/AnimatedHeading";
 import Typo from "@/components/mine/Typo";
@@ -18,6 +17,7 @@ import * as Linking from "expo-linking";
 import { getDefaultReturnUrl, makeRedirectUri } from "expo-auth-session";
 import { getQueryParams } from "expo-auth-session/build/QueryParams";
 import { supabase } from "@/config/supabase";
+import LiftLogicLogo from "@/assets/liftlogic.svg";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -135,11 +135,8 @@ export default function WelcomeScreen() {
           }}
         >
           <View style={styles.header}>
-            <ImageTemplate
-              source={require("@/assets/liftlogic.svg")}
-              resizeMode="contain"
-              style={styles.logoImage}
-            />
+            <LiftLogicLogo style={styles.logoImage}/>
+            
           </View>
 
           <View style={styles.main}>
@@ -219,8 +216,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   logoImage: {
-    width: "50%",
-    height: "50%",
+    width: "70%",
+    height: "70%",
   },
   phoneImage: {
     width: "100%",

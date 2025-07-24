@@ -21,8 +21,8 @@ const ExercisesList: React.FC<ExercisesListProps> = ({ exercises }) => {
 
 const styles = StyleSheet.create({
     scrollContainer: {
-        paddingVertical: 10,
-        paddingHorizontal: 0,
+        // paddingVertical: 10,
+        // paddingHorizontal: 0,
     },
     item: {
         flexDirection: 'row',

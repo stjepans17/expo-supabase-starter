@@ -7,25 +7,22 @@ import { fetchMusclesByMuscleGroupId } from '@/lib/muscle';
 import { Muscle, MuscleGroup } from '@/types';
 import { router, useLocalSearchParams } from 'expo-router';
 import Typo from '@/components/mine/Typo';
-import { GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useSwipeBack } from '@/hooks/useSwipeBack';
 import ScreenWrapperMidMargin from '@/components/mine/ScreenWrapperMidMargin';
 
 const Exercises2 = () => {
-  const { swipeGesture } = useSwipeBack();
   const { muscleGroupId } = useLocalSearchParams();
 
   const [muscles, setMuscles] = useState<Muscle[]>([]);
   const [loading, setLoading] = useState(false);
 
   function handlePress(muscleId: number) {
-      router.push({
-        pathname: '/exercises3',
-        params: { 
-          muscleId: muscleId.toString(),
-        }
-      });
-    };
+    router.push({
+      pathname: '/exercises3',
+      params: {
+        muscleId: muscleId.toString(),
+      }
+    });
+  };
 
   useEffect(() => {
     if (muscleGroupId) {
@@ -59,70 +56,66 @@ const Exercises2 = () => {
   }
 
   return (
-    <GestureHandlerRootView>
-      <GestureDetector gesture={swipeGesture}>
-        <ScreenWrapperMidMargin>
-          <View style={styles.wrapper} collapsable={false}>
-            <View style={styles.contentRow}>
-              <View style={styles.contentColumn}>
-                {muscles[0] &&
-                  <ExerciseBox
-                    title={muscles[0].name}
-                    onPress={() => handlePress(muscles[0].id)}
-                  />
-                }
-              </View>
-              <View style={styles.contentColumn}>
-                {muscles[1] &&
-                  <ExerciseBox
-                    title={muscles[1].name}
-                    onPress={() => handlePress(muscles[1].id)}
-                  />
-                }
-              </View>
-            </View>
-            <View style={styles.contentRow}>
-              <View style={styles.contentColumn}>
-                {muscles[2] &&
-                  <ExerciseBox
-                    title={muscles[2].name}
-                    onPress={() => handlePress(muscles[2].id)}
-                  />
-                }
-              </View>
-              <View style={styles.contentColumn}>
-                {muscles[3] &&
-                  <ExerciseBox
-                    title={muscles[3].name}
-                    onPress={() => handlePress(muscles[3].id)}
-                  />
-                }
-              </View>
-            </View>
-            <View style={styles.contentRow}>
-              <View style={styles.contentColumn}>
-                {muscles[4] &&
-                  <ExerciseBox
-                    title={muscles[4].name}
-                    onPress={() => handlePress(muscles[4].id)}
-                  />
-                }
-              </View>
-              <View style={styles.contentColumn}>
-                {muscles[5] &&
-                  <ExerciseBox
-                    title={muscles[5].name}
-                    onPress={() => handlePress(muscles[5].id)}
-                  />
-                }
-              </View>
-            </View>
-            <View style={styles.contentRow}></View>
-            <View style={styles.contentRow}></View>
+    <ScreenWrapperMidMargin>
+      <View style={styles.wrapper} collapsable={false}>
+        <View style={styles.contentRow}>
+          <View style={styles.contentColumn}>
+            {muscles[0] &&
+              <ExerciseBox
+                title={muscles[0].name}
+                onPress={() => handlePress(muscles[0].id)}
+              />
+            }
           </View>
-        </ScreenWrapperMidMargin>
-      </GestureDetector>
-    </GestureHandlerRootView>
+          <View style={styles.contentColumn}>
+            {muscles[1] &&
+              <ExerciseBox
+                title={muscles[1].name}
+                onPress={() => handlePress(muscles[1].id)}
+              />
+            }
+          </View>
+        </View>
+        <View style={styles.contentRow}>
+          <View style={styles.contentColumn}>
+            {muscles[2] &&
+              <ExerciseBox
+                title={muscles[2].name}
+                onPress={() => handlePress(muscles[2].id)}
+              />
+            }
+          </View>
+          <View style={styles.contentColumn}>
+            {muscles[3] &&
+              <ExerciseBox
+                title={muscles[3].name}
+                onPress={() => handlePress(muscles[3].id)}
+              />
+            }
+          </View>
+        </View>
+        <View style={styles.contentRow}>
+          <View style={styles.contentColumn}>
+            {muscles[4] &&
+              <ExerciseBox
+                title={muscles[4].name}
+                onPress={() => handlePress(muscles[4].id)}
+              />
+            }
+          </View>
+          <View style={styles.contentColumn}>
+            {muscles[5] &&
+              <ExerciseBox
+                title={muscles[5].name}
+                onPress={() => handlePress(muscles[5].id)}
+              />
+            }
+          </View>
+        </View>
+        <View style={styles.contentRow}></View>
+        <View style={styles.contentRow}></View>
+      </View>
+    </ScreenWrapperMidMargin>
   );
 };
 

@@ -51,10 +51,11 @@ export default function AppLayout() {
 							// colorScheme === "dark"
 							// 	? colors.dark.foreground
 							// 	: colors.light.foreground,
-						gestureEnabled: true,
+						gestureEnabled: false,
 					}}
 				/>
 			</Stack>
 		</AuthProvider>
 	);
 }
+

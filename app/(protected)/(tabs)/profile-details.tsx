@@ -1,88 +1,108 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
-import { radius, spacingX, spacingY } from '@/constants/spacings'
-import ScreenWrapper from '@/components/mine/ScreenWrapper'
-import Typo from '@/components/mine/Typo'
-import { useAuth } from '@/context/supabase-provider'
-import { useRouter } from 'expo-router'
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React from 'react';
+import { radius, spacingX, spacingY } from '@/constants/spacings';
+import ScreenWrapper from '@/components/mine/ScreenWrapper';
+import Typo from '@/components/mine/Typo';
+import { useAuth } from '@/context/supabase-provider';
+import { useRouter } from 'expo-router';
 
-const Profile = () => {
+const ProfileScreen = () => {
   const router = useRouter();
-  const {profile, signOut} = useAuth();
-  
+  const { profile, signOut } = useAuth();
+
+  const handleNavigateToSettings = () => {
+    router.push("/(protected)/(tabs)/settings");
+  };
+
+  const handleSignOut = () => {
+    signOut();
+  };
+
   return (
-    <ScreenWrapper style={{ backgroundColor: '#F2F2F0', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
-      <View style={{ width: '90%', alignSelf: 'center' }}>
-        <View style={styles.header}>
-          <Typo fontFamily='Inter-Bold' size={28}>Profile</Typo>
+    <ScreenWrapper style={styles.screenContainer}>
+      <View style={styles.contentWrapper}>
+        
+        {/* Header Section */}
+        <View style={styles.headerContainer}>
+          <Typo fontFamily="Inter-Bold" size={28}>
+            Profile
+          </Typo>
         </View>
 
-        <View style={[styles.stackContainer, { height: '60%' }]}>
-          <View style={[styles.card, { flex: 2, flexDirection: 'row', alignItems: 'center' }]}>
-            <View
-              style={{
-                width: '25%',         
-                aspectRatio: 1,       
-                borderRadius: 999,    // huge number → always a circle
-                overflow: 'hidden',   
-                marginRight: spacingX._20,
-              }}
-            >
+        {/* Cards Container */}
+        <View style={styles.cardsContainer}>
+          
+          {/* User Profile Card */}
+          <View style={[styles.card, styles.profileCard]}>
+            <View style={styles.avatarContainer}>
               {/* <Image
                 source={require('../../assets/images/userface-example.png')}
-                style={{
-                  flex: 1,           
-                  width: undefined,   
-                  height: undefined,
-                  resizeMode: 'cover' 
-                }}
+                style={styles.avatarImage}
               /> */}
             </View>
 
-            <View style={{ flex: 2 }}>
+            <View style={styles.profileInfo}>
               <Typo
                 fontFamily="Inter-Bold"
                 size={22}
                 fontWeight={800}
-                style={{ marginBottom: spacingY._5 }}
+                style={styles.userName}
               >
                 {profile?.full_name}
               </Typo>
-              <Typo color="#4600DE" size={14} fontFamily = 'Inter-Bold' style={{letterSpacing: -0.5}}>Profile information</Typo>
+              <Typo 
+                color="#4600DE" 
+                size={14} 
+                fontFamily="Inter-Bold" 
+                style={styles.profileSubtext}
+              >
+                Profile information
+              </Typo>
             </View>
-
-            {/* <Arrow/> */}
           </View>
 
-          <TouchableOpacity style={[styles.card, { flex: 1, marginTop: spacingY._10 }]} onPress={() => router.push("/(protected)/(tabs)/settings")}>
+          {/* Settings Card */}
+          <TouchableOpacity 
+            style={[styles.card, styles.actionCard]} 
+            onPress={handleNavigateToSettings}
+          >
             <Typo fontFamily="Inter-Bold">Settings</Typo>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.card, { flex: 1, marginTop: spacingY._10 }]} onPress={() => signOut()}>
+          {/* Logout Card */}
+          <TouchableOpacity 
+            style={[styles.card, styles.actionCard]} 
+            onPress={handleSignOut}
+          >
             <Typo fontFamily="Inter-Bold">Logout</Typo>
           </TouchableOpacity>
 
         </View>
       </View>
     </ScreenWrapper>
-  )
-}
+  );
+};
 
-export default Profile
+export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  loader: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  header: {
+  screenContainer: {
+    backgroundColor: '#F2F2F0',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
-    marginBottom: spacingX._20
   },
-  stackContainer: {
+  contentWrapper: {
+    width: '90%',
+    alignSelf: 'center',
+  },
+  headerContainer: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    marginBottom: spacingX._20,
+  },
+  cardsContainer: {
     width: '100%',
+    height: '60%',
     flexDirection: 'column',
   },
   card: {
@@ -93,4 +113,35 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'flex-start',
   },
-})
+  profileCard: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  actionCard: {
+    flex: 1,
+    marginTop: spacingY._10,
+  },
+  avatarContainer: {
+    width: '25%',
+    aspectRatio: 1,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginRight: spacingX._20,
+  },
+  avatarImage: {
+    flex: 1,
+    width: undefined,
+    height: undefined,
+    resizeMode: 'cover',
+  },
+  profileInfo: {
+    flex: 2,
+  },
+  userName: {
+    marginBottom: spacingY._5,
+  },
+  profileSubtext: {
+    letterSpacing: -0.5,
+  },
+});

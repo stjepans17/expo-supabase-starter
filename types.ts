@@ -47,6 +47,29 @@ export type MuscleGroup = {
     description?: string
 }
 
+export type Workout = {
+    id: string;
+    user_id: string;
+    performed_at: Date;
+    duration_min?: number;  
+    name?: string;
+};
+
+export type WorkoutExercise = {
+    id: string;
+    workout_id: string; // references id from Workout
+    exercise_id: number;
+    position: number;
+};
+
+export type WorkoutSet = {
+    id: string;
+    workout_exercise_id: string; // references id from WorkoutExercise
+    set_number: number;
+    reps?: number;
+    weight?: number;
+};
+
 export type User = {
   id: string;
   aud: string;
