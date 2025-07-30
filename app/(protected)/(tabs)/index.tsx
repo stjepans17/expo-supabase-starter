@@ -11,6 +11,9 @@ import { useAuth } from '@/context/supabase-provider';
 import { fetchAllWorkoutDatesForUser } from '@/lib/workout';
 import ScreenWrapper from '@/components/mine/ScreenWrapper';
 import { router } from 'expo-router';
+import { useWorkout } from '@/context/WorkoutProvider';
+import { formatTime, formatTimeOnlyMinutes } from '@/lib/helpers/DateTimeHelper';
+import workouts from './workouts';
 
 let { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -59,10 +62,11 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title }) => (
 
 const Home: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>('');
-  const [completedWorkoutDates, setCompletedWorkoutDates] =  useState<{[key: string]: any}>({});
-  
+  const [completedWorkoutDates, setCompletedWorkoutDates] = useState<{ [key: string]: any }>({});
+
   const [loading, setLoading] = useState<boolean>(false);
   const { session } = useAuth();
+  const { state, dispatch } = useWorkout();
 
   // TODO: dynamically
   const progressData: ProgressData[] = [
@@ -77,69 +81,69 @@ const Home: React.FC = () => {
   };
 
   useEffect(() => {
-  async function fetchData() {
-    setLoading(true);
+    async function fetchData() {
+      setLoading(true);
 
-    if (!session?.user.id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const allWorkoutDates = await fetchAllWorkoutDatesForUser(session?.user.id);
-
-      const uniqueDates = [...new Set(
-        allWorkoutDates.map((item: { performed_at: string }) => 
-          item.performed_at.split('T')[0]
-        )
-      )];
-
-      const workoutDatesObj = uniqueDates.reduce((acc, date) => {
-        acc[date] = {
-          marked: true,
-          dotColor: '#4600DE'
-        };
-        return acc;
-      }, {} as {[key: string]: any});
-
-      const today = new Date().toISOString().split('T')[0];
-      if (workoutDatesObj[today]) {
-        workoutDatesObj[today] = {
-          ...workoutDatesObj[today],
-          selected: true,
-          selectedColor: '#4600DE'
-        };
-      } else {
-        workoutDatesObj[today] = {
-          selected: true,
-          selectedColor: '#4600DE'
-        };
+      if (!session?.user.id) {
+        setLoading(false);
+        return;
       }
 
-      setCompletedWorkoutDates(workoutDatesObj);
-    } catch (error) {
-      console.error('Error fetching workout dates:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  fetchData();
-}, [session?.user.id]);
+      try {
+        const allWorkoutDates = await fetchAllWorkoutDatesForUser(session?.user.id);
 
-  function handleWorkoutCardPress() {
-    router.push('/active-workout');
-  }
+        const uniqueDates = [...new Set(
+          allWorkoutDates.map((item: { performed_at: string }) =>
+            item.performed_at.split('T')[0]
+          )
+        )];
+
+        const workoutDatesObj = uniqueDates.reduce((acc, date) => {
+          acc[date] = {
+            marked: true,
+            dotColor: '#4600DE'
+          };
+          return acc;
+        }, {} as { [key: string]: any });
+
+        const today = new Date().toISOString().split('T')[0];
+        if (workoutDatesObj[today]) {
+          workoutDatesObj[today] = {
+            ...workoutDatesObj[today],
+            selected: true,
+            selectedColor: '#4600DE'
+          };
+        } else {
+          workoutDatesObj[today] = {
+            selected: true,
+            selectedColor: '#4600DE'
+          };
+        }
+
+        setCompletedWorkoutDates(workoutDatesObj);
+      } catch (error) {
+        console.error('Error fetching workout dates:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [session?.user.id]);
 
   if (loading) {
-		return (
-			<ScreenWrapper>
-				<View style={styles.loader}>
-					<ActivityIndicator size="large" />
-				</View>
-			</ScreenWrapper>
-		);
-	}
+    return (
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" />
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
+  function now() {
+    throw new Error('Function not implemented.');
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -190,10 +194,10 @@ const Home: React.FC = () => {
         <View style={styles.progressSection}>
           <View style={styles.progressSectionInner}>
             {progressData.map((item, index) => (
-              <ProgressItem 
+              <ProgressItem
                 key={index}
-                title={item.title} 
-                percentage={item.percentage} 
+                title={item.title}
+                percentage={item.percentage}
               />
             ))}
           </View>
@@ -207,13 +211,25 @@ const Home: React.FC = () => {
               <SectionHeader title="Active Workout" />
               <View style={styles.sectionContent}>
                 <View style={styles.cardContainer}>
-                  <WorkoutCard
-                    title="No Workout Started Yet"
-                    subtitle="Click to start a new workout"
-                    duration=""
-                    rightText=""
-                    onPress={() => handleWorkoutCardPress()}
-                  />
+                  {
+                    state.workout ? (
+                      <WorkoutCard
+                        title={state.workout.name || "New Empty Workout"}
+                        subtitle={`${state.exercises.length.toString()} Exercises`}
+                        duration={"In Progress"}
+                        rightText="."
+                        onPress={() => router.push('/active-workout')}
+                      />
+                    ) : (
+                      <WorkoutCard
+                        title="No Workout Started Yet"
+                        subtitle="Click to start a new workout"
+                        duration=""
+                        rightText=""
+                        onPress={() => router.push('/active-workout')}
+                      />
+                    )
+                  }
                 </View>
               </View>
             </View>
@@ -225,6 +241,7 @@ const Home: React.FC = () => {
               <SectionHeader title="Current Plan" />
               <View style={styles.sectionContent}>
                 <View style={styles.cardContainer}>
+                  {/* if plan exists add it here from context(?) otherwise offer to make a new one/redirect to plan maker screen */}
                   <WorkoutCard
                     title="Push Workout"
                     subtitle="12 Exercises"
@@ -252,7 +269,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
   },
-  
+
   // Calendar section
   calendarSection: {
     height: SCREEN_HEIGHT * 0.4,
@@ -278,13 +295,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 10,
   },
-  
+
   // Main content area
   mainContent: {
     width: '100%',
     minHeight: SCREEN_HEIGHT
   },
-  
+
   // Progress section styles
   progressSection: {
     marginTop: spacingX._15,
@@ -315,7 +332,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  
+
   // Text styles
   titleText: {
     fontSize: 16,
@@ -333,7 +350,7 @@ const styles = StyleSheet.create({
     color: '#9C9DA1',
     marginTop: spacingX._5
   },
-  
+
   // Training section styles
   trainingSection: {
     height: '60%',
@@ -374,7 +391,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center'
   },
-  
+
   // Workout card styles
   workoutCard: {
     borderRadius: 16,

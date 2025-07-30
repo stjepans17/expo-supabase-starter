@@ -7,7 +7,6 @@ export const fetchAllExercises = async () => {
   
   if (error) throw error;
 
-  console.log('Exercises fetched:', data);
   return data; 
 };
 
@@ -19,7 +18,6 @@ export const fetchExerciseById = async (id: number) => {
   
   if (error) throw error;
 
-  console.log('Exercise by id fetched:', data);
   return data; 
 };
 
@@ -27,11 +25,10 @@ export const fetchExercisesByMuscleId = async (muscleId: number) => {
   const { data, error } = await supabase
     .from('exercise')
     .select('*')
-    .eq('muscleid', muscleId);
+    .eq('muscle_id', muscleId);
   
   if (error) throw error;
 
-  console.log('Exercises by muscle id fetched:', data);
   return data; 
 };
 
@@ -43,6 +40,5 @@ export const fetchExerciseByName = async (name: string) => {
   
   if (error) throw error;
 
-  console.log('Exercise by name fetched:', data);
   return data; 
 };

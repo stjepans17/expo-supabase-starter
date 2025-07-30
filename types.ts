@@ -29,16 +29,16 @@ export type Profile = {
 export type Muscle = {
     id: number
     name: string 
-    musclegroupid: number
+    muscle_group_id: number
     description?: string
 }
 
 export type Exercise = {
     id: number;
     name: string;
-    muscleid: number;
+    muscle_id: number;
     description?: string;
-    imagekey?: string;
+    image_key?: string;
 }
 
 export type MuscleGroup = {
@@ -51,8 +51,9 @@ export type Workout = {
     id: string;
     user_id: string;
     performed_at: Date;
-    duration_min?: number;  
+    duration_seconds?: number;  
     name?: string;
+    finished_at?: Date;
 };
 
 export type WorkoutExercise = {

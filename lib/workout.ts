@@ -1,4 +1,5 @@
 import { supabase } from "@/config/supabase";
+import { Workout, WorkoutExercise, WorkoutSet } from "@/types";
 
 export const fetchWorkoutByUserId = async (user_id: string) => {
   const { data, error } = await supabase
@@ -12,45 +13,17 @@ export const fetchWorkoutByUserId = async (user_id: string) => {
   return data;
 };
 
-// export const fetchExercisesLengthFromWorkoutId = async (workout_id: string) => {
-//   const { data, count, error } = await supabase
-//     .from('workoutexercise')
-//     .select('*', { count: 'exact' })
-//     .eq('workout_id', workout_id)
-
-//   if (error) throw error;
-//   console.log('Data returned:', data);
-//   console.log('Count returned:', count);
-//   console.log('Workout ID being searched:', workout_id);
-//   return count; 
-// };
-
 export const fetchExercisesLengthFromWorkoutId = async (workout_id: string) => {
-  console.log('Searching for workout_id:', workout_id);
-  console.log('Type of workout_id:', typeof workout_id);
 
-  // First, let's see ALL the data in the table
-  const { data: allData, error: allError } = await supabase
-    .from('workoutexercise')
-    .select('*')
-    .limit(5); // Just get first 5 rows to see structure
-
-  console.log('First 5 rows from workoutexercise table:', allData);
-  console.log('Column names:', allData?.[0] ? Object.keys(allData[0]) : 'No data');
-
-  // Now try the specific query
   const { data, count, error } = await supabase
-    .from('workoutexercise')
+    .from('workout_exercise')
     .select('*', { count: 'exact' })
     .eq('workout_id', workout_id)
 
   if (error) {
-    console.error('Supabase error:', error);
+    console.error('Query error:', error);
     throw error;
   }
-
-  console.log('Filtered data:', data);
-  console.log('Count:', count);
 
   return count;
 };
@@ -63,8 +36,63 @@ export async function fetchAllWorkoutDatesForUser(user_id: string) {
     .order('performed_at', { ascending: false });
 
   if (error) {
+    console.error('Query error:', error);
     throw error;
   }
 
   return data;
 };
+
+export async function saveStartWorkout(workout: Workout) {
+  const { data, error } = await supabase
+  .from('workout')
+  .insert({ id: workout.id, user_id: workout.user_id, name: workout.name, performed_at: workout.performed_at })
+  .select()
+
+  if (error) {
+    console.error('Query error:', error);
+    throw error;
+  }
+
+  return data;
+}
+
+export async function saveFinishWorkout(
+  workout: Workout,
+  workoutExercises: WorkoutExercise[],
+  workoutSets: WorkoutSet[],
+) {
+
+  // 1. update the existing entry
+  const { error: workoutErr } = await supabase
+    .from('workout')
+    .update({
+      finished_at: workout.finished_at,
+      duration_seconds: workout.duration_seconds,
+    })
+    .eq('id', workout.id)
+    .single();
+
+  if (workoutErr) throw workoutErr;
+
+  // 2. insert exercises
+  if (workoutExercises.length) {
+    const { error: exErr } = await supabase
+      .from('workout_exercise')
+      .insert(workoutExercises);
+
+    if (exErr) throw exErr;
+  }
+
+  // 3. insert sets
+  if (workoutSets.length) {
+    const { error: setErr } = await supabase
+      .from('workout_set')
+      .insert(workoutSets);
+
+    if (setErr) throw setErr;
+  }
+
+  // TODO: if anything fails roll it back
+  return true;
+}

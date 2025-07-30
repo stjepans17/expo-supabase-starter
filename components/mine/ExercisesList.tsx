@@ -1,19 +1,24 @@
 import { Exercise } from '@/types';
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { ScrollView, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 interface ExercisesListProps {
     exercises: Exercise[];
+    onExercisePress?: (exercise: Exercise) => void;
 }
 
-const ExercisesList: React.FC<ExercisesListProps> = ({ exercises }) => {
+const ExercisesList: React.FC<ExercisesListProps> = ({ exercises, onExercisePress }) => {
     return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
             {exercises.map((exercise) => (
-                <View style={styles.item} key={exercise.id}>
+                <TouchableOpacity 
+                    style={styles.item} 
+                    key={exercise.id}
+                    onPress={() => onExercisePress?.(exercise)} 
+                >
                     <View style={styles.iconPlaceholder} />
                     <Text style={styles.itemText}>{exercise.name}</Text>
-                </View>
+                </TouchableOpacity>
             ))}
         </ScrollView>
     );

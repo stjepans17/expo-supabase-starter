@@ -1,10 +1,10 @@
 import "../global.css";
 
 import { Stack } from "expo-router";
-
 import { AuthProvider } from "@/context/supabase-provider";
 import { useColorScheme } from "@/lib/useColorScheme";
 import { colors } from "@/constants/colors";
+import { WorkoutProvider } from '@/context/WorkoutProvider';
 
 export default function AppLayout() {
 	const { colorScheme } = useColorScheme();
@@ -47,10 +47,10 @@ export default function AppLayout() {
 								colors.light.background
 						},
 						headerTintColor:
-						colors.light.foreground,
-							// colorScheme === "dark"
-							// 	? colors.dark.foreground
-							// 	: colors.light.foreground,
+							colors.light.foreground,
+						//s colorScheme === "dark"
+						// 	? colors.dark.foreground
+						// 	: colors.light.foreground,
 						gestureEnabled: false,
 					}}
 				/>

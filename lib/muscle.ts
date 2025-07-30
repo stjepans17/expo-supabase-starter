@@ -16,7 +16,7 @@ export const fetchMusclesByMuscleGroupId = async (muscleGroupId: number) : Promi
   const { data, error } = await supabase
     .from('muscle')
     .select('*')
-    .eq("musclegroupid", muscleGroupId);
+    .eq("muscle_group_id", muscleGroupId);
   
   if (error) throw error;
   console.log('Data fetched:', data);

@@ -115,6 +115,12 @@ const _layout = () => {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="search-by-name"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   )
 }
