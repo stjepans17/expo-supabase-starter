@@ -1,15 +1,21 @@
 import { ScrollView, StyleSheet, Text, View, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import ScreenWrapper from '@/components/mine/ScreenWrapper'
-import { spacingX } from '@/constants/spacings'
+import { spacingX, spacingY } from '@/constants/spacings'
 import Typo from '@/components/mine/Typo'
 import ScreenWrapperMinMargin from '@/components/mine/ScreenWrapperMinMargin'
 import { Workout } from '@/types'
 import ViewBox from '@/components/mine/ViewBox'
 import { fetchExercisesLengthFromWorkoutId, fetchWorkoutByUserId } from '@/lib/workout';
 import { useAuth } from "@/context/supabase-provider";
-import PlusIcon from '@/assets/PlusIcon.svg'
-import { router } from 'expo-router'
+import PlusIcon from '@/assets/PlusIcon.svg';
+import { router } from 'expo-router';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
+import * as Icons from 'phosphor-react-native';
+
+let { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+
+const iconSize = Math.max(20, SCREEN_WIDTH * 0.06);
 
 const workouts = () => {
   const { session } = useAuth();
@@ -66,7 +72,7 @@ const workouts = () => {
   }
 
   return (
-    <ScreenWrapperMinMargin style={{ backgroundColor: '#F2F2F0', justifyContent: 'flex-start', alignItems: 'stretch' }}>
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.wrapper}>
         <View style={styles.header}>
           <View style={styles.innerWrapper}>
@@ -86,76 +92,96 @@ const workouts = () => {
             </View>
           </View>
         </View>
-        <ScrollView style={styles.scrollArea} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <View style={styles.mainInnerWrapper}>
-            <View style={styles.mainTitleWrapper}>
-              <Typo style={styles.mainTitle}>Your {view}</Typo>
-              <TouchableOpacity>
-                <PlusIcon width={50} height={25}/>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.mainContentWrapper}>
-              {favoriteWorkouts &&
-                <View style={styles.mainCategorySection}>
-                  <View style={styles.mainCategoryTitleWrapper}>
-                    <Typo style={styles.title}>Favorites</Typo>
-                  </View>
-                  <ScrollView contentContainerStyle={styles.mainCategoryContentWrapper} horizontal={true}>
-                    {favoriteWorkouts?.map((workoutData, index) => (
-                      <View key={index} style={styles.mainSubcontentWrapper}>
-                        <ViewBox workoutData={workoutData} exerciseCount={exerciseCounts[workoutData.id]} />
-                      </View>
-                    ))}
-                  </ScrollView>
-                </View>}
-              <View style={styles.mainCategorySection}>
-                <View style={styles.mainCategoryTitleWrapper}>
-                  <Typo style={styles.title}>Specific Category #1</Typo>
+
+        <View style={styles.quickStartSection}>
+          <View style={styles.quickStartHeader}>
+            <Typo style={styles.quickStartTitle}>Quick Start</Typo>
+          </View>
+          <View style={styles.quickStartMain}>
+            <TouchableOpacity style={styles.quickStartButton}>
+              <Icons.Plus size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }}/>
+              <Typo style={styles.quickStartButtonTitle}>Start Empty Workout</Typo>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.quickStartSection}>
+          <View style={styles.quickStartHeader}>
+            <Typo style={styles.quickStartTitle}>Routines</Typo>
+          </View>
+          <View style={styles.quickStartMain}>
+            <TouchableOpacity style={styles.quickStartButton}>
+              <Icons.Notebook size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }}/>
+              <Typo style={styles.quickStartButtonTitle}>New Routine</Typo>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.myRoutinesSection}>
+          <Typo style={styles.myRoutinesTitle}>My Routines (3)</Typo>
+          <View style={styles.myRoutinesContent}>
+            <View style={styles.routineViewBoxWrapper}>
+              <View style={styles.routineViewBox}>
+                <View style={styles.routineViewBoxHeader}>
+                  <Typo style={{color: '#000000', letterSpacing: -0.72, fontSize: 24, fontFamily: 'Inter-Bold', marginTop: spacingY._5}}>PUSH</Typo>
+                  <Typo style={{color: '#8E8E93', letterSpacing: -0.72, fontSize: 16, fontFamily: 'Inter', marginTop: spacingY._5}}>12 Exercises</Typo>
                 </View>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.mainCategoryContentWrapper}
-                >
-                  {dummyWorkouts?.map((workoutData, index) => (
-                    <View key={index} style={styles.mainSubcontentWrapper}>
-                      <ViewBox
-                        workoutData={workoutData}
-                        exerciseCount={exerciseCounts[workoutData.id]}
-                        onPress={() => handleViewBoxPress()}
-                      />
-                    </View>
-                  ))}
-                </ScrollView>
+                <View style={styles.routineViewBoxFooter}>
+                  <TouchableOpacity style={{backgroundColor: '#4600DE', borderRadius: 8, flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                    <Typo style={{color: '#FFFFFF', letterSpacing: -0.72}}>Start Routine</Typo>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.mainCategorySection}>
-                <View style={styles.mainCategoryTitleWrapper}>
-                  <Typo style={styles.title}>Specific Category #2</Typo>
+            </View>
+            <View style={styles.routineViewBoxWrapper}>
+              <View style={styles.routineViewBox}>
+                 <View style={styles.routineViewBoxHeader}>
+                  <Typo style={{color: '#000000', letterSpacing: -0.72, fontSize: 24, fontFamily: 'Inter-Bold', marginTop: spacingY._5}}>PULL</Typo>
+                  <Typo style={{color: '#8E8E93', letterSpacing: -0.72, fontSize: 16, fontFamily: 'Inter', marginTop: spacingY._5}}>8 Exercises</Typo>
                 </View>
-                <View style={styles.mainCategoryContentWrapper}>
-                  <View style={styles.mainSubcontentWrapper}>
-                    <View style={styles.viewBox}>
-
-                    </View>
-                  </View>
-                  <View style={styles.mainSubcontentWrapper}>
-                    <View style={styles.viewBox}>
-
-                    </View>
-                  </View>
+                <View style={styles.routineViewBoxFooter}>
+                  <TouchableOpacity style={{backgroundColor: '#4600DE', borderRadius: 8, flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                    <Typo style={{color: '#FFFFFF', letterSpacing: -0.72}}>Start Routine</Typo>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+            <View style={styles.routineViewBoxWrapper}>
+              <View style={styles.routineViewBox}>
+                 <View style={styles.routineViewBoxHeader}>
+                  <Typo style={{color: '#000000', letterSpacing: -0.72, fontSize: 24, fontFamily: 'Inter-Bold', marginTop: spacingY._5}}>LEGS</Typo>
+                  <Typo style={{color: '#8E8E93', letterSpacing: -0.72, fontSize: 16, fontFamily: 'Inter', marginTop: spacingY._5}}>6 Exercises</Typo>
+                </View>
+                <View style={styles.routineViewBoxFooter}>
+                  <TouchableOpacity style={{backgroundColor: '#4600DE', borderRadius: 8, flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+                    <Typo style={{color: '#FFFFFF', letterSpacing: -0.72}}>Start Routine</Typo>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
           </View>
-        </ScrollView>
+          {/* <View style={styles.quickStartHeader}>
+          </View>
+          <View style={styles.quickStartMain}>
+            <TouchableOpacity style={styles.quickStartButton}>
+              <Icons.Notebook size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }}/>
+              <Typo style={styles.quickStartButtonTitle}>New Routine</Typo>
+            </TouchableOpacity>
+          </View> */}
+        </View>
       </View>
-    </ScreenWrapperMinMargin>
+    </ScrollView>
   )
 }
 
 export default workouts
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#F2F2F0',
+    justifyContent: 'flex-start',
+    minHeight: SCREEN_HEIGHT,
+    width: "100%",
+    alignItems: "center",
+  },
   wrapper: {
     width: '100%',
     height: '100%',
@@ -167,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   header: {
-    height: '10%',
+    height: SCREEN_HEIGHT * 0.1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFF',
@@ -180,20 +206,12 @@ const styles = StyleSheet.create({
     shadowRadius: 12.3,
     elevation: 5,
   },
-  scrollArea: {
-    height: '100%',
-  },
   innerWrapper: {
     justifyContent: 'center',
     alignItems: 'center',
     width: '80%',
     height: '80%',
     flexDirection: 'row'
-  },
-  scrollContent: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
   },
   innerWrapperLeftHalf: {
     flex: 1,
@@ -211,87 +229,73 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     letterSpacing: -0.72,
   },
-  infoText: {
-    fontFamily: 'Inter-Bold',
-    letterSpacing: -0.72,
-    fontSize: 16
-  },
-  infoTextTitle: {
-    fontFamily: 'Inter-Bold',
-    letterSpacing: -0.72,
-    fontSize: 18,
-    marginBottom: spacingX._5
-  },
-  infoTextSubtitle: {
-    letterSpacing: -0.72,
-    fontSize: 16,
-    color: '#9C9DA1'
-  },
-  mainTitle: {
-    fontFamily: 'Inter-Bold',
-    letterSpacing: -0.72,
-    fontSize: 28
-  },
   activeTab: {
     borderBottomColor: '#4600DE',
     borderBottomWidth: 2,
   },
-  mainInnerWrapper: {
-    width: '90%',
-    height: '95%',
+  quickStartSection: {
+    height: SCREEN_HEIGHT * 0.135,
+    width: '100%',
   },
-  mainTitleWrapper: {
+  addRoutineSection: {
+    height: SCREEN_HEIGHT * 0.135,
+    width: '100%',
+    // backgroundColor: 'green',
+    alignItems: 'flex-start',
+    justifyContent: 'center'
+  },
+  myRoutinesSection: {
+    height: SCREEN_HEIGHT * 0.8,
+    width: '100%',
+    // backgroundColor: 'black',
+    // alignItems: 'flex-start',
+    // justifyContent: 'center'
+  },
+  myRoutinesContent: {
+    width: '100%',
+    height: '100%',
+    gap: spacingY._10
+  },
+  quickStartHeader: {
     flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    marginBottom: spacingX._20,
-    flexDirection: 'row',
-    gap: '1%'
+    // backgroundColor: 'purple',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
   },
-  mainContentWrapper: {
-    flex: 8
-  },
-  mainCategorySection: {
-    flex: 1,
+  quickStartMain: {
+    flex: 1.5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacingX._15,
-    minHeight: Dimensions.get('window').height * 0.25,
+    margin: spacingX._10,
   },
-  mainCategoryTitleWrapper: {
-    flex: 1,
-    alignSelf: 'flex-start'
+  quickStartTitle: {
+    marginLeft: spacingX._10,
+    fontSize: 18,
+    color: '#000000',
+    letterSpacing: -0.72,
+    fontFamily: 'Inter-Bold'
   },
-  mainCategoryContentWrapper: {
-    flex: 8,
+  myRoutinesTitle: {
+    marginTop: spacingY._10,
+    marginBottom: spacingY._10,
+    marginLeft: spacingX._10,
+    fontSize: 18,
+    color: '#000000',
+    letterSpacing: -0.72,
+    fontFamily: 'Inter-Bold'
+  },
+  quickStartButtonTitle: {
+    fontSize: 14,
+    color: '#000000',
+    fontFamily: 'Inter-Bold'
+  },
+  quickStartButton: {
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    height: '90%',
     width: '100%',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    flexDirection: 'row'
-  },
-  mainCategoryContentWrapperHorizontal: {
-    // justifyContent: 'center',
-    alignContent: 'center',
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-
-    justifyContent: 'flex-start',
-    alignItems: 'stretch',
-  },
-  mainSubcontentWrapper: {
-    // flex: 1,
-    flexGrow: 0,         
-    flexShrink: 0,       
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    minWidth: Dimensions.get('window').width * 0.4,
-    width: Dimensions.get('window').width * 0.45
-  },
-  viewBox: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    width: '90%',
-    height: '80%',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -299,29 +303,28 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.04,
     shadowRadius: 10.3,
-    elevation: 5, // Android shadow
+    elevation: 5, // Android shadow,
+    flexDirection: 'row',
+    gap: spacingX._5,
   },
-  viewBoxMain: {
-    flex: 2,
-    justifyContent: 'center',
-    alignItems: 'center'
+  routineViewBoxWrapper: {
+    width: '100%',
+    height: SCREEN_HEIGHT * 0.7 * 0.25
   },
-  viewBoxBottom: {
+  routineViewBox: {
+    margin: spacingX._10,
+    backgroundColor: '#FFFFFF',
+    flex: 1,
+    borderRadius: 10
+  },
+  routineViewBoxHeader: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    margin: spacingX._10
   },
-  viewBoxInner: {
-    width: '80%',
-    height: '90%',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-  viewBoxInnerRow: {
-    width: '80%',
-    height: '90%',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    flexDirection: 'row'
+  routineViewBoxFooter: {
+    flex: 1,
+    margin: spacingX._10
   }
 })

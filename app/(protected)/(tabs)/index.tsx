@@ -1,7 +1,7 @@
 import Typo from '@/components/mine/Typo';
 import { spacingX, spacingY } from '@/constants/spacings';
 import React, { useEffect, useState } from 'react'
-import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Calendar } from 'react-native-calendars';
 import ProgressChart70 from '@/assets/ProgressChart70.svg';
 import HomeRectangle from '@/assets/HomeRectangle.svg';
@@ -141,10 +141,6 @@ const Home: React.FC = () => {
     );
   }
 
-  function now() {
-    throw new Error('Function not implemented.');
-  }
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       {/* Calendar Section */}
@@ -243,10 +239,11 @@ const Home: React.FC = () => {
                 <View style={styles.cardContainer}>
                   {/* if plan exists add it here from context(?) otherwise offer to make a new one/redirect to plan maker screen */}
                   <WorkoutCard
-                    title="Push Workout"
-                    subtitle="12 Exercises"
-                    duration="60 min"
-                    rightText="Week 1/4"
+                    title="No Plan Started Yet"
+                    subtitle="Click to create a new plan"
+                    duration=""
+                    rightText=""
+                    onPress={() => Alert.alert("", "Not yet implemented")} // TODO: implement
                   />
                 </View>
               </View>

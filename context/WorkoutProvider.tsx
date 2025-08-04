@@ -70,12 +70,15 @@ function reducer(state: State, action: Action): State {
     }
 
     case 'UPDATE_SET':
-      return {
+      const a = {
         ...state,
         sets: state.sets.map(s =>
           s.id === action.setId ? { ...s, [action.field]: action.value } : s
         ),
       };
+
+      console.log(`set added: ${JSON.stringify(a)}`);
+      return a;
 
     case 'FINISH_WORKOUT':
       if (!state.workout) return state;

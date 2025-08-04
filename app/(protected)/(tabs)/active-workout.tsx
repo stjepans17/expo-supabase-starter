@@ -293,7 +293,7 @@ const ExerciseCard = ({
             <Text style={styles.headerText}>SET</Text>
           </View>
           <View style={styles.headerInputContainer}>
-            <Text style={styles.headerText}>REP</Text>
+            <Text style={styles.headerText}>REPS</Text>
           </View>
           <View style={styles.headerInputContainer}>
             <Text style={styles.headerText}>KG</Text>
@@ -342,39 +342,73 @@ const SetRow = ({
         <Text style={styles.setNumber}>{set.set_number}</Text>
       </View>
 
-      {/* Reps Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="12"
-          value={set.reps?.toString() || ''}
-          onChangeText={(text) => {
-            const value = parseInt(text);
-            if (!isNaN(value)) {
-              onUpdateSet(set.id, 'reps', value);
-            }
-          }}
-          keyboardType="numeric"
-        />
-      </View>
+      {
+        isCompleted ? (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.inputComplete}
+              placeholder="12"
+              value={set.reps?.toString() || ''}
+              onChangeText={(text) => {
+                const value = parseInt(text);
+                if (!isNaN(value)) {
+                  onUpdateSet(set.id, 'reps', value);
+                }
+              }}
+              keyboardType="numeric"
+            />
+          </View>
 
-      {/* Weight Input */}
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="50"
-          value={set.weight?.toString() || ''}
-          onChangeText={(text) => {
-            const value = parseFloat(text);
-            if (!isNaN(value)) {
-              onUpdateSet(set.id, 'weight', value);
-            }
-          }}
-          keyboardType="numeric"
-        />
-      </View>
+        ) : (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="12"
+              value={set.reps?.toString() || ''}
+              onChangeText={(text) => {
+                const value = parseInt(text);
+                if (!isNaN(value)) {
+                  onUpdateSet(set.id, 'reps', value);
+                }
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+        )};
 
-      {/* Checkmark Button */}
+      {
+        isCompleted ? (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.inputComplete}
+              placeholder="50"
+              value={set.weight?.toString() || ''}
+              onChangeText={(text) => {
+                const value = parseFloat(text);
+                if (!isNaN(value)) {
+                  onUpdateSet(set.id, 'weight', value);
+                }
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+        ) : (
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="50"
+              value={set.weight?.toString() || ''}
+              onChangeText={(text) => {
+                const value = parseFloat(text);
+                if (!isNaN(value)) {
+                  onUpdateSet(set.id, 'weight', value);
+                }
+              }}
+              keyboardType="numeric"
+            />
+          </View>
+        )};
+
       <TouchableOpacity
         style={[styles.checkButton, isCompleted && styles.checkButtonCompleted]}
         onPress={() => setIsCompleted(!isCompleted)}
@@ -390,11 +424,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-
   scrollContent: {
     flexGrow: 1,
   },
-
   // Header Styles (Now part of scrollable content)
   headerContainer: {
     height: screenHeight * 0.25, // 25% of screen height
@@ -662,7 +694,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     backgroundColor: '#fff',
   },
-
+  inputComplete: {
+    height: 40,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    textAlign: 'center',
+    backgroundColor: '#4600DE',
+    color: '#ffffff'
+  },
   checkButton: {
     width: 32,
     height: 32,
@@ -679,7 +721,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-
   // Updated Add Set Button
   addSetButton: {
     backgroundColor: '#4600DE',
@@ -688,7 +729,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
   },
-
   addSetText: {
     color: '#fff',
     fontSize: 16,

@@ -9,7 +9,6 @@ export const fetchWorkoutByUserId = async (user_id: string) => {
 
   if (error) throw error;
 
-  console.log('Workout by user id fetched:', data);
   return data;
 };
 
