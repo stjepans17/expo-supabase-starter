@@ -13,10 +13,11 @@ import { Exercise } from '@/types';
 import { spacingX, spacingY } from '@/constants/spacings';
 import ExercisesList from '@/components/mine/ExercisesList';
 import { fetchAllExercises } from '@/lib/exercise';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useWorkout } from '@/context/WorkoutProvider';
 
 const SearchExerciseScreen: React.FC = () => {
+  const { mode } = useLocalSearchParams();
   const { dispatch } = useWorkout();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -53,8 +54,15 @@ const SearchExerciseScreen: React.FC = () => {
 
   // ── when user picks an exercise ───────────────────────────────
   const handleExercisePress = (exercise: Exercise) => {
-    dispatch({ type: 'ADD_EXERCISE', exercise });
-    router.push('/active-workout');                              
+    if (mode === 'routine') {
+      router.navigate({
+        pathname: '/create-routine',
+        params: { selectedExercise: JSON.stringify(exercise) }
+      });
+    } else {
+      dispatch({ type: 'ADD_EXERCISE', exercise });
+      router.push('/active-workout');
+    }
   };
 
   const clearSearch = () => {

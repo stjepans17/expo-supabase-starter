@@ -1,4 +1,4 @@
-import { Dimensions, FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, Dimensions, FlatList, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import ScreenWrapper from '@/components/mine/ScreenWrapper'
 import WorkoutList from '@/components/mine/ExercisesList'
@@ -6,29 +6,90 @@ import { spacingX, spacingY } from '@/constants/spacings'
 import ScreenWrapperMinMargin from '@/components/mine/ScreenWrapperMinMargin';
 import Typo from '@/components/mine/Typo';
 import ProgressChart from '@/components/mine/progress/ProgressChart'
+import WeightViewBox from '@/components/mine/progress/WeightViewBox'
+import { useAuth } from '@/context/supabase-provider'
+import { getWeightHistory, updateWeight } from '@/lib/profile'
 
 let { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const chartData = {
   labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
   datasets: [{
-    data: [50, 80, 60, 45, 75, 10, 0]
+    data: [0, 0, 0, 0, 0, 0, 0]
   }]
 };
 
 const progress = () => {
+  const { session } = useAuth();
+
   const categories = ["Abs & Core", "Arms", "Back", "Chest", "Legs", "Shoulders"];
   const [chosenCategory, setChosenCategory] = useState<string>("Abs & Core");
   const [timeInterval, setTimeInterval] = useState<string>("Week"); // week, month, year, all
+  const [weightData, setWeightData] = useState<{ recorded_at: string; weight: string; }[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetchDataForInterval()
-  }, [timeInterval,]);
+  }, [timeInterval]);
+
+  useEffect(() => {
+    async function fetchWeightData() {
+      if (session?.user.id) {
+        const newWeightData = await getWeightHistory(session?.user.id);
+        setWeightData(newWeightData);
+      }
+    }
+
+    fetchWeightData();
+  }, [session?.user.id]);
 
   function fetchDataForInterval() {
     console.log('Function not implemented.');
   };
 
+  async function onAddWeight() {
+    if (Platform.OS === 'ios') {
+      Alert.prompt(
+        'Add Weight',
+        'Enter your current weight (kg)',
+        async (weight) => {
+          if (weight && !isNaN(Number(weight))) {
+            try {
+              if (session?.user.id) {
+                setLoading(true);
+                await updateWeight(session.user.id, Number(weight));
+                const newWeightData = await getWeightHistory(session.user.id);
+                setWeightData(newWeightData);
+                setLoading(false);
+              }
+            } catch (error) {
+              Alert.alert('Error', 'Failed to save weight. Please try again.');
+              console.error('Error saving weight:', error);
+            }
+          } else {
+            Alert.alert('Invalid Input', 'Please enter a valid number.');
+          }
+        },
+        'plain-text',
+        '',
+        'numeric'
+      );
+    } else {
+      // For Android, you'll need a modal or different approach
+      Alert.alert('Add Weight', 'This feature requires a custom modal on Android');
+    }
+  }
+
+  if (loading) {
+		return (
+			<ScreenWrapper>
+				<View style={styles.loader}>
+					<ActivityIndicator size="large" />
+				</View>
+			</ScreenWrapper>
+		);
+	}
+  
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.wrapper}>
@@ -45,7 +106,9 @@ const progress = () => {
         <View style={styles.achievementsWrapper}>
           <View style={styles.achievementsHeader}>
             <Typo style={styles.achievementsTitle}>Achievements</Typo>
-            <Typo style={styles.achievementsSubtitle}>View All</Typo>
+            <TouchableOpacity onPress={() => Alert.alert("Error", "Not yet implemented")}>
+              <Typo style={styles.achievementsSubtitle}>View All</Typo>
+            </TouchableOpacity>
           </View>
           <ScrollView
             style={styles.achievementScrollView}
@@ -80,8 +143,12 @@ const progress = () => {
         <View style={styles.bodyweightTrackerWrapper}>
           <View style={styles.achievementsHeader}>
             <Typo style={styles.achievementsTitle}>Body Weight Tracker</Typo>
-            <Typo style={styles.achievementsSubtitle}>View All</Typo>
-            <Typo style={styles.bodyweightPlusIcon}>+</Typo>
+            <TouchableOpacity onPress={() => Alert.alert("Error", "Function not yet implemented")}>
+              <Typo style={styles.achievementsSubtitle}>View All</Typo>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onAddWeight}>
+              <Typo style={styles.bodyweightPlusIcon}>+</Typo>
+            </TouchableOpacity>
           </View>
           <ScrollView
             style={styles.achievementScrollView}
@@ -89,36 +156,13 @@ const progress = () => {
             horizontal={true}
             showsHorizontalScrollIndicator={false}
           >
-            <View style={styles.contentBox}>
-              <View style={styles.contentBoxHeader}>
-                <Typo style={styles.achievementsHeaderText}>02.07.2025</Typo>
-              </View>
-              <View style={styles.contentBoxMain}>
-                <Typo style={styles.achievementsMainText}>86 kg</Typo>
-              </View>
-              <View style={styles.contentBoxFooter}>
-              </View>
-            </View>
-            <View style={styles.contentBox}>
-              <View style={styles.contentBoxHeader}>
-                <Typo style={styles.achievementsHeaderText}>12.5.2025</Typo>
-              </View>
-              <View style={styles.contentBoxMain}>
-                <Typo style={styles.achievementsMainText}>88 kg</Typo>
-              </View>
-              <View style={styles.contentBoxFooter}>
-              </View>
-            </View>
-            <View style={styles.contentBox}>
-              <View style={styles.contentBoxHeader}>
-                <Typo style={styles.achievementsHeaderText}>10.4.2025</Typo>
-              </View>
-              <View style={styles.contentBoxMain}>
-                <Typo style={styles.achievementsMainText}>90 kg</Typo>
-              </View>
-              <View style={styles.contentBoxFooter}>
-              </View>
-            </View>
+            {weightData.map((item, index) => (
+              <WeightViewBox
+                key={index}
+                date={new Date(item.recorded_at).toLocaleDateString('de-DE')} // or whatever format you prefer
+                weight={`${item.weight} kg`}
+              />
+            ))}
           </ScrollView>
         </View>
       </View>
@@ -260,6 +304,11 @@ const styles = StyleSheet.create({
     marginBottom: spacingY._5,
     marginLeft: spacingX._10
   },
+  loader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1
+  },
   achievementsFooterText: {
     fontSize: 14,
     fontFamily: 'Inter',
@@ -303,4 +352,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   }
 });
+
 

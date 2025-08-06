@@ -79,12 +79,12 @@ const _layout = () => {
           ),
         }} 
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="notifications"
         options={{
           href: null,
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="profile-details"
         options={{
@@ -117,6 +117,12 @@ const _layout = () => {
       />
       <Tabs.Screen
         name="search-by-name"
+        options={{
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="create-routine"
         options={{
           href: null,
         }}

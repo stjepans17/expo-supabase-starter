@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { ScrollView, StyleSheet, Text, View, Dimensions, TouchableOpacity, ActivityIndicator, Alert } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import ScreenWrapper from '@/components/mine/ScreenWrapper'
 import { spacingX, spacingY } from '@/constants/spacings'
@@ -9,9 +9,12 @@ import ViewBox from '@/components/mine/ViewBox'
 import { fetchExercisesLengthFromWorkoutId, fetchWorkoutByUserId } from '@/lib/workout';
 import { useAuth } from "@/context/supabase-provider";
 import PlusIcon from '@/assets/PlusIcon.svg';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons'
 import * as Icons from 'phosphor-react-native';
+import { deleteRoutine, fetchRoutinesForUser } from '@/lib/routine';
+import RoutineViewBox from '@/components/mine/routine/RoutineViewBox';
+import { PlansView } from '@/components/mine/workouts/PlansView'
 
 let { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -19,11 +22,10 @@ const iconSize = Math.max(20, SCREEN_WIDTH * 0.06);
 
 const workouts = () => {
   const { session } = useAuth();
+  const { refresh } = useLocalSearchParams();
 
   const [view, setView] = useState<string>("Workouts");
-  const [dummyWorkouts, setDummyWorkouts] = useState<Workout[] | null>();
-  const [favoriteWorkouts, setFavoriteWorkouts] = useState<Workout[] | null>();
-  const [exerciseCounts, setExerciseCounts] = useState<{ [key: string]: number }>({});
+  const [routines, setRoutines] = useState<{ id: string, name: string, exercise_ids: number[] }[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
   function handleViewBoxPress() {
@@ -31,35 +33,30 @@ const workouts = () => {
   }
 
   useEffect(() => {
-    async function fetchData() {
+    retrieveRoutineData();
+  }, [session?.user.id, refresh]);
+
+  async function retrieveRoutineData() {
+    if (session?.user.id) {
       setLoading(true);
+      try {
+        const routinesData = await fetchRoutinesForUser(session.user.id);
 
-      if (!session?.user.id) {
-        return;
-      }
+        const formattedRoutines = routinesData?.map(routine => ({
+          id: routine.id,
+          name: routine.name,
+          exercise_ids: routine.routine_exercise?.map(re => re.exercise_id) || [] // Add null check
+        })) || []; // Handle case where routinesData is null/undefined
 
-      const workoutsResult = await fetchWorkoutByUserId(session?.user.id);
-      setDummyWorkouts(workoutsResult);
-
-      // Then fetch exercise counts for all workouts
-      if (workoutsResult && workoutsResult.length > 0) {
-        const countsPromises = workoutsResult.map(async (workout) => {
-          const count = await fetchExercisesLengthFromWorkoutId(workout.id);
-          return { workoutId: workout.id, count };
-        });
-
-        const counts = await Promise.all(countsPromises);
-        const countsObject = counts.reduce((acc, { workoutId, count }) => {
-          acc[workoutId] = count ?? 0;
-          return acc;
-        }, {} as { [key: string]: number });
-
-        setExerciseCounts(countsObject);
+        setRoutines(formattedRoutines);
+      } catch (error) {
+        console.error('Error fetching routines:', error);
+        Alert.alert('Error', 'Failed to load routines. Please try again.');
+      } finally {
         setLoading(false);
       }
-    };
-    fetchData();
-  }, []);
+    }
+  }
 
   if (loading) {
     return (
@@ -93,80 +90,77 @@ const workouts = () => {
           </View>
         </View>
 
-        <View style={styles.quickStartSection}>
-          <View style={styles.quickStartHeader}>
-            <Typo style={styles.quickStartTitle}>Quick Start</Typo>
-          </View>
-          <View style={styles.quickStartMain}>
-            <TouchableOpacity style={styles.quickStartButton}>
-              <Icons.Plus size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }}/>
-              <Typo style={styles.quickStartButtonTitle}>Start Empty Workout</Typo>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.quickStartSection}>
-          <View style={styles.quickStartHeader}>
-            <Typo style={styles.quickStartTitle}>Routines</Typo>
-          </View>
-          <View style={styles.quickStartMain}>
-            <TouchableOpacity style={styles.quickStartButton}>
-              <Icons.Notebook size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }}/>
-              <Typo style={styles.quickStartButtonTitle}>New Routine</Typo>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <View style={styles.myRoutinesSection}>
-          <Typo style={styles.myRoutinesTitle}>My Routines (3)</Typo>
-          <View style={styles.myRoutinesContent}>
-            <View style={styles.routineViewBoxWrapper}>
-              <View style={styles.routineViewBox}>
-                <View style={styles.routineViewBoxHeader}>
-                  <Typo style={{color: '#000000', letterSpacing: -0.72, fontSize: 24, fontFamily: 'Inter-Bold', marginTop: spacingY._5}}>PUSH</Typo>
-                  <Typo style={{color: '#8E8E93', letterSpacing: -0.72, fontSize: 16, fontFamily: 'Inter', marginTop: spacingY._5}}>12 Exercises</Typo>
-                </View>
-                <View style={styles.routineViewBoxFooter}>
-                  <TouchableOpacity style={{backgroundColor: '#4600DE', borderRadius: 8, flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                    <Typo style={{color: '#FFFFFF', letterSpacing: -0.72}}>Start Routine</Typo>
-                  </TouchableOpacity>
-                </View>
-              </View>
+        {view === "Workouts" && <View>
+          <View style={styles.quickStartSection}>
+            <View style={styles.quickStartHeader}>
+              <Typo style={styles.quickStartTitle}>Quick Start</Typo>
             </View>
-            <View style={styles.routineViewBoxWrapper}>
-              <View style={styles.routineViewBox}>
-                 <View style={styles.routineViewBoxHeader}>
-                  <Typo style={{color: '#000000', letterSpacing: -0.72, fontSize: 24, fontFamily: 'Inter-Bold', marginTop: spacingY._5}}>PULL</Typo>
-                  <Typo style={{color: '#8E8E93', letterSpacing: -0.72, fontSize: 16, fontFamily: 'Inter', marginTop: spacingY._5}}>8 Exercises</Typo>
-                </View>
-                <View style={styles.routineViewBoxFooter}>
-                  <TouchableOpacity style={{backgroundColor: '#4600DE', borderRadius: 8, flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                    <Typo style={{color: '#FFFFFF', letterSpacing: -0.72}}>Start Routine</Typo>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-            <View style={styles.routineViewBoxWrapper}>
-              <View style={styles.routineViewBox}>
-                 <View style={styles.routineViewBoxHeader}>
-                  <Typo style={{color: '#000000', letterSpacing: -0.72, fontSize: 24, fontFamily: 'Inter-Bold', marginTop: spacingY._5}}>LEGS</Typo>
-                  <Typo style={{color: '#8E8E93', letterSpacing: -0.72, fontSize: 16, fontFamily: 'Inter', marginTop: spacingY._5}}>6 Exercises</Typo>
-                </View>
-                <View style={styles.routineViewBoxFooter}>
-                  <TouchableOpacity style={{backgroundColor: '#4600DE', borderRadius: 8, flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                    <Typo style={{color: '#FFFFFF', letterSpacing: -0.72}}>Start Routine</Typo>
-                  </TouchableOpacity>
-                </View>
-              </View>
+            <View style={styles.quickStartMain}>
+              <TouchableOpacity style={styles.quickStartButton} onPress={() => router.push("/active-workout")}>
+                <Icons.Plus size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }} />
+                <Typo style={styles.quickStartButtonTitle}>Start Empty Workout</Typo>
+              </TouchableOpacity>
             </View>
           </View>
-          {/* <View style={styles.quickStartHeader}>
+          <View style={styles.quickStartSection}>
+            <View style={styles.quickStartHeader}>
+              <Typo style={styles.quickStartTitle}>Routines</Typo>
+            </View>
+            <View style={styles.quickStartMain}>
+              <TouchableOpacity style={styles.quickStartButton} onPress={() => router.push("/create-routine")}>
+                <Icons.Notebook size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }} />
+                <Typo style={styles.quickStartButtonTitle}>New Routine</Typo>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.quickStartMain}>
-            <TouchableOpacity style={styles.quickStartButton}>
-              <Icons.Notebook size={iconSize} color="#000000" style={{ marginLeft: spacingX._10 }}/>
-              <Typo style={styles.quickStartButtonTitle}>New Routine</Typo>
-            </TouchableOpacity>
-          </View> */}
-        </View>
+          <View style={styles.myRoutinesSection}>
+            <Typo style={styles.myRoutinesTitle}>
+              My Routines ({routines.length})
+            </Typo>
+            <View style={styles.myRoutinesContent}>
+              {routines.map((routine, index) => (
+                <RoutineViewBox
+                  key={index}
+                  routineName={routine.name}
+                  exerciseCount={routine.exercise_ids.length}
+                  onStartRoutine={() => {
+                    // Handle starting the routine
+                    console.log(`Starting routine: ${routine.name}`);
+                    // You could navigate to workout screen or set active routine
+                  }}
+                  onDeleteRoutine={() => {
+                    Alert.alert(
+                      'Delete Routine',
+                      `Are you sure you want to delete "${routine.name}"? This action cannot be undone.`,
+                      [
+                        {
+                          text: 'Cancel',
+                          style: 'cancel'
+                        },
+                        {
+                          text: 'Confirm',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              setLoading(true);
+                              await deleteRoutine(routine.id);
+                              await retrieveRoutineData();
+                              setLoading(false);
+                            } catch (error) {
+                              Alert.alert('Error', 'Failed to delete routine. Please try again.');
+                              console.error('Error deleting routine:', error);
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        </View>}
+        {view === "Plans" && <PlansView />}
       </View>
     </ScrollView>
   )
