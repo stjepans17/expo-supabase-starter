@@ -6,10 +6,10 @@ export const fetchProfileById = async (userId: string) => {
     .select('*')
     .eq("id", userId)
     .single();
-  
+
   if (error) throw error;
 
-  return data; 
+  return data;
 };
 
 export async function updateWeight(userId: string, newWeight: number) {
@@ -46,10 +46,66 @@ export async function getWeightHistory(userId: string) {
     .order('recorded_at', { ascending: false })
     .limit(10);
 
-  if(error) throw error;
+  if (error) throw error;
 
   return data?.map(item => ({
     recorded_at: item.recorded_at,
     weight: item.weight.toString()
   })) || [];
+}
+
+export async function getHeaviestLift(userId: string): Promise<{
+  success: boolean;
+  heaviestLift?: {
+    weight: number;
+    exerciseName: string;
+  };
+  error?: string;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('get_heaviest_lift', {
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error fetching heaviest lift:', error);
+      return { success: false, error: 'Failed to fetch heaviest lift' };
+    }
+
+    if (!data || data.length === 0) {
+      return { success: true, heaviestLift: undefined };
+    }
+
+    const result = data[0];
+    const heaviestLift = {
+      weight: parseFloat(result.weight),
+      exerciseName: result.exercise_name,
+    };
+
+    return { success: true, heaviestLift };
+  } catch (error) {
+    console.error('Unexpected error in getHeaviestLift:', error);
+    return { success: false, error: 'An unexpected error occurred' };
+  }
+}
+
+
+
+export async function getLongestWorkout(userId: string) {
+  const { data, error } = await supabase
+    .from('workout')
+    .select('name, duration_seconds')
+    .eq('user_id', userId)         
+    .not('finished_at', 'is', null)                
+    .order('duration_seconds', { ascending: false })
+    .limit(1);                                     
+
+  if (error) throw error;
+
+  return (
+    data?.map(({ name, duration_seconds }) => ({
+      workout_name: name,
+      duration: duration_seconds,
+    })) || []
+  );
 }

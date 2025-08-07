@@ -8,7 +8,6 @@ export const fetchAllMuscles = async () => {
   
   if (error) throw error;
 
-  console.log('Exercises fetched:', data);
   return data; 
 };
 
@@ -19,7 +18,6 @@ export const fetchMusclesByMuscleGroupId = async (muscleGroupId: number) : Promi
     .eq("muscle_group_id", muscleGroupId);
   
   if (error) throw error;
-  console.log('Data fetched:', data);
 
   return data as Muscle[]; 
 };

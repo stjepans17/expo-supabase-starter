@@ -124,9 +124,9 @@ const workouts = () => {
                   routineName={routine.name}
                   exerciseCount={routine.exercise_ids.length}
                   onStartRoutine={() => {
-                    // Handle starting the routine
-                    console.log(`Starting routine: ${routine.name}`);
                     // You could navigate to workout screen or set active routine
+                    // Handle starting the routine
+                    //console.log(`Starting routine: ${routine.name}`);
                   }}
                   onDeleteRoutine={() => {
                     Alert.alert(

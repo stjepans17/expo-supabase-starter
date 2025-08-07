@@ -836,6 +836,7 @@ export const WorkoutTracker: React.FC = () => {
             planName: planName as string,
             weekNumber: parseInt(weekNumber as string) || 1,
             workoutOrder: parseInt(workoutOrder as string) || 1,
+            routineId: routineId as string,
           };
 
           dispatch({
@@ -937,7 +938,7 @@ export const WorkoutTracker: React.FC = () => {
       },
       {
         text: 'No',
-        onPress: () => console.log('Cancel Pressed'),
+        onPress: () => null,
       }
     ]);
   }
@@ -971,11 +972,15 @@ export const WorkoutTracker: React.FC = () => {
     setLoading(true);
     if (!workout) return;
     await finishWorkout(new Date(), elapsedTime);
+    //router.push("/");
+    router.push({
+      pathname: '/workout-complete',
+      params: {
+        workout_id: state.workout?.id,
+      }
+    });
     setLoading(false);
 
-    // TODO: maybe show modal or sum shi on finish
-    //setWorkoutStatus(WorkoutStatus.Finished);
-    setWorkoutStatus(WorkoutStatus.NotStarted);
   };
 
   if (loading) {

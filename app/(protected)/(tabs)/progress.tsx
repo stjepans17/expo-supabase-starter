@@ -1,14 +1,32 @@
-import { ActivityIndicator, Alert, Dimensions, FlatList, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React, { useEffect, useState } from 'react'
-import ScreenWrapper from '@/components/mine/ScreenWrapper'
-import WorkoutList from '@/components/mine/ExercisesList'
-import { spacingX, spacingY } from '@/constants/spacings'
+import {
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  FlatList,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from 'react-native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import ScreenWrapper from '@/components/mine/ScreenWrapper';
+import WorkoutList from '@/components/mine/ExercisesList';
+import { spacingX, spacingY } from '@/constants/spacings';
 import ScreenWrapperMinMargin from '@/components/mine/ScreenWrapperMinMargin';
 import Typo from '@/components/mine/Typo';
-import ProgressChart from '@/components/mine/progress/ProgressChart'
-import WeightViewBox from '@/components/mine/progress/WeightViewBox'
-import { useAuth } from '@/context/supabase-provider'
-import { getWeightHistory, updateWeight } from '@/lib/profile'
+import ProgressChart from '@/components/mine/progress/ProgressChart';
+import WeightViewBox from '@/components/mine/progress/WeightViewBox';
+import { useAuth } from '@/context/supabase-provider';
+import {
+  getHeaviestLift,
+  getLongestWorkout,
+  getWeightHistory,
+  updateWeight
+} from '@/lib/profile';
+import { formatTime, formatTimeShort } from '@/lib/helpers/DateTimeHelper';
 
 let { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -19,33 +37,69 @@ const chartData = {
   }]
 };
 
-const progress = () => {
+const Progress = () => {
   const { session } = useAuth();
 
   const categories = ["Abs & Core", "Arms", "Back", "Chest", "Legs", "Shoulders"];
   const [chosenCategory, setChosenCategory] = useState<string>("Abs & Core");
   const [timeInterval, setTimeInterval] = useState<string>("Week"); // week, month, year, all
   const [weightData, setWeightData] = useState<{ recorded_at: string; weight: string; }[]>([]);
+  const [heaviestLift, setHeaviestLift] = useState<{
+    weight: number;
+    exerciseName: string;
+  }>({ weight: 0, exerciseName: "" });
+  const [longestWorkout, setLongestWorkout] = useState<{ duration: number; workout_name: string; }[]>([
+    { duration: 0, workout_name: "" }
+  ]);
+
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchDataForInterval()
+    fetchDataForInterval();
   }, [timeInterval]);
 
-  useEffect(() => {
-    async function fetchWeightData() {
-      if (session?.user.id) {
-        const newWeightData = await getWeightHistory(session?.user.id);
-        setWeightData(newWeightData);
-      }
-    }
+  // **Refetch on screen focus** and also when session.user.id changes
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+      const fetchData = async () => {
+        if (!session?.user.id) return;
+        setLoading(true);
+        try {
+          const userId = session.user.id;
+          const [weightHistory, heaviest, longest] = await Promise.all([
+            getWeightHistory(userId),
+            getHeaviestLift(userId),
+            getLongestWorkout(userId),
+          ]);
 
-    fetchWeightData();
-  }, [session?.user.id]);
+          if (!isActive) return;
+          setWeightData(weightHistory);
+
+          if (heaviest.success && heaviest.heaviestLift) {
+            setHeaviestLift(heaviest.heaviestLift);
+          }
+
+          if (longest.length) {
+            setLongestWorkout(longest);
+          }
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+        } finally {
+          if (isActive) setLoading(false);
+        }
+      };
+
+      fetchData();
+      return () => {
+        isActive = false;
+      };
+    }, [session?.user.id])
+  );
 
   function fetchDataForInterval() {
     console.log('Function not implemented.');
-  };
+  }
 
   async function onAddWeight() {
     if (Platform.OS === 'ios') {
@@ -60,11 +114,12 @@ const progress = () => {
                 await updateWeight(session.user.id, Number(weight));
                 const newWeightData = await getWeightHistory(session.user.id);
                 setWeightData(newWeightData);
-                setLoading(false);
               }
             } catch (error) {
               Alert.alert('Error', 'Failed to save weight. Please try again.');
               console.error('Error saving weight:', error);
+            } finally {
+              setLoading(false);
             }
           } else {
             Alert.alert('Invalid Input', 'Please enter a valid number.');
@@ -75,21 +130,20 @@ const progress = () => {
         'numeric'
       );
     } else {
-      // For Android, you'll need a modal or different approach
       Alert.alert('Add Weight', 'This feature requires a custom modal on Android');
     }
   }
 
   if (loading) {
-		return (
-			<ScreenWrapper>
-				<View style={styles.loader}>
-					<ActivityIndicator size="large" />
-				</View>
-			</ScreenWrapper>
-		);
-	}
-  
+    return (
+      <ScreenWrapper>
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" />
+        </View>
+      </ScreenWrapper>
+    );
+  }
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.wrapper}>
@@ -102,7 +156,11 @@ const progress = () => {
             ))}
           </View>
         </View>
-        <ProgressChart chartData={chartData} onIntervalChange={setTimeInterval} interval={timeInterval} />
+        <ProgressChart
+          chartData={chartData}
+          onIntervalChange={setTimeInterval}
+          interval={timeInterval}
+        />
         <View style={styles.achievementsWrapper}>
           <View style={styles.achievementsHeader}>
             <Typo style={styles.achievementsTitle}>Achievements</Typo>
@@ -113,7 +171,7 @@ const progress = () => {
           <ScrollView
             style={styles.achievementScrollView}
             contentContainerStyle={styles.achievementsContent}
-            horizontal={true}
+            horizontal
             showsHorizontalScrollIndicator={false}
           >
             <View style={styles.contentBox}>
@@ -121,10 +179,14 @@ const progress = () => {
                 <Typo style={styles.achievementsHeaderText}>Heaviest lift</Typo>
               </View>
               <View style={styles.contentBoxMain}>
-                <Typo style={styles.achievementsMainText}>110 kg</Typo>
+                <Typo style={styles.achievementsMainText}>
+                  {heaviestLift.weight + " kg"}
+                </Typo>
               </View>
               <View style={styles.contentBoxFooter}>
-                <Typo style={styles.achievementsFooterText}>Leg press</Typo>
+                <Typo style={styles.achievementsFooterText}>
+                  {heaviestLift.exerciseName}
+                </Typo>
               </View>
             </View>
             <View style={styles.contentBox}>
@@ -132,10 +194,14 @@ const progress = () => {
                 <Typo style={styles.achievementsHeaderText}>Longest Workout</Typo>
               </View>
               <View style={styles.contentBoxMain}>
-                <Typo style={styles.achievementsMainText}>1h 45 min</Typo>
+                <Typo style={styles.achievementsMainText}>
+                  {formatTimeShort(longestWorkout[0].duration)}
+                </Typo>
               </View>
               <View style={styles.contentBoxFooter}>
-                <Typo style={styles.achievementsFooterText}>Workout Name</Typo>
+                <Typo style={styles.achievementsFooterText}>
+                  {longestWorkout[0].workout_name}
+                </Typo>
               </View>
             </View>
           </ScrollView>
@@ -153,13 +219,13 @@ const progress = () => {
           <ScrollView
             style={styles.achievementScrollView}
             contentContainerStyle={styles.achievementsContent}
-            horizontal={true}
+            horizontal
             showsHorizontalScrollIndicator={false}
           >
             {weightData.map((item, index) => (
               <WeightViewBox
                 key={index}
-                date={new Date(item.recorded_at).toLocaleDateString('de-DE')} // or whatever format you prefer
+                date={new Date(item.recorded_at).toLocaleDateString('de-DE')}
                 weight={`${item.weight} kg`}
               />
             ))}
@@ -167,10 +233,10 @@ const progress = () => {
         </View>
       </View>
     </ScrollView>
-  )
-}
+  );
+};
 
-export default progress
+export default Progress;
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -274,13 +340,6 @@ const styles = StyleSheet.create({
     gap: spacingX._30
   },
   achievementsContent: {
-    // width: '100%',
-    // height: '100%',
-    // backgroundColor: 'blue',
-    // justifyContent: 'center',
-    // alignItems: 'center',
-    // gap: spacingX._10
-
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacingX._20
@@ -352,5 +411,3 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   }
 });
-
-

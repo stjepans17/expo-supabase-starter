@@ -86,10 +86,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 		if (data.session) {
 			setSession(data.session);
-			console.log("User signed up:", data.user);
-		} else {
-			console.log("No user returned from sign up");
-		}
+		} 
 	};
 
 	const signIn = async (email: string, password: string) => {
@@ -105,10 +102,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 		if (data.session) {
 			setSession(data.session);
-			console.log("User signed in:", data.user);
 			return { data, error: null };
 		} else {
-			console.log("No user returned from sign in");
 		}
 	};
 
@@ -116,11 +111,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 		const { error } = await supabase.auth.signOut();
 
 		if (error) {
-			console.error("Error signing out:", error);
 			return;
-		} else {
-			console.log("User signed out");
-		}
+		} 
 	};
 
 	return (

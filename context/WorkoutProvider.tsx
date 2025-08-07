@@ -14,6 +14,12 @@
 //   exercises: WorkoutExercise[];
 //   sets: WorkoutSet[];
 //   exercisesDict: Record<number, Exercise>
+//   currentPlanInfo?: {
+//     planId: string;
+//     planName: string;
+//     weekNumber: number;
+//     workoutOrder: number;
+//   };
 //   //duration: number; // duration of a workout in seconds
 // };
 
@@ -21,12 +27,14 @@
 //   workout: null,
 //   exercises: [],
 //   sets: [],
-//   exercisesDict: {}
+//   exercisesDict: {},
+//   currentPlanInfo: undefined,
 //   //duration: 0
 // };
 
 // type Action =
 //   | { type: 'START_WORKOUT'; workout: Workout }
+//   | { type: 'START_WORKOUT_FROM_PLAN'; workout: Workout; exercises: Exercise[]; planInfo: State['currentPlanInfo'] }
 //   | { type: 'ADD_EXERCISE'; exercise: Exercise }
 //   | { type: 'ADD_SET'; workoutExerciseId: string }
 //   | { type: 'UPDATE_SET'; setId: string; field: 'weight' | 'reps'; value: number }
@@ -38,6 +46,31 @@
 //   switch (action.type) {
 //     case 'START_WORKOUT':
 //       return { ...state, workout: action.workout };
+
+//     case 'START_WORKOUT_FROM_PLAN': {
+//       // Create workout exercises for all routine exercises
+//       const workoutExercises: WorkoutExercise[] = action.exercises.map((exercise, index) => ({
+//         id: uuid.v4(),
+//         workout_id: action.workout.id,
+//         exercise_id: exercise.id,
+//         position: index + 1,
+//       }));
+
+//       // Create exercises dictionary
+//       const exercisesDict: Record<number, Exercise> = {};
+//       action.exercises.forEach(exercise => {
+//         exercisesDict[exercise.id] = exercise;
+//       });
+
+//       return {
+//         ...state,
+//         workout: action.workout,
+//         exercises: workoutExercises,
+//         exercisesDict,
+//         currentPlanInfo: action.planInfo,
+//         sets: [], // Reset sets for new workout
+//       };
+//     }
 
 //     case 'ADD_EXERCISE': {
 //       if (!state.workout) return state;
@@ -77,8 +110,7 @@
 //         ),
 //       };
 
-//       console.log(`set added: ${JSON.stringify(a)}`);
-//       return a;
+//       return a;state
 
 //     case 'FINISH_WORKOUT':
 //       if (!state.workout) return state;
@@ -140,6 +172,7 @@
 //   );
 // };
 
+
 import React, { createContext, useContext, useReducer } from 'react';
 import uuid from 'react-native-uuid';
 import {
@@ -149,6 +182,7 @@ import {
   Exercise,
 } from '@/types';
 import { saveFinishWorkout } from '@/lib/workout';
+import { completePlanWorkout } from '@/lib/routine';
 import { Alert } from 'react-native';
 
 type State = {
@@ -161,6 +195,7 @@ type State = {
     planName: string;
     weekNumber: number;
     workoutOrder: number;
+    routineId: string;
   };
   //duration: number; // duration of a workout in seconds
 };
@@ -252,7 +287,7 @@ function reducer(state: State, action: Action): State {
         ),
       };
 
-      return a;state
+      return a;
 
     case 'FINISH_WORKOUT':
       if (!state.workout) return state;
@@ -290,22 +325,40 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const finishWorkout = async (finishedAt: Date, durationSeconds: number) => {
-    if (!state.workout) return;
+  if (!state.workout) return;
 
-    const workoutForDb: Workout = {
-      ...state.workout,
-      finished_at: finishedAt,
-      duration_seconds: durationSeconds,
-    };
-
-    try {
-      await saveFinishWorkout(workoutForDb, state.exercises, state.sets);
-      dispatch({ type: 'RESET_WORKOUT' });
-    } catch (err) {
-      console.error(err);
-      Alert.alert('Save failed', 'Please check your connection and try again.');
-    }
+  const workoutForDb: Workout = {
+    ...state.workout,
+    finished_at: finishedAt,
+    duration_seconds: durationSeconds,
   };
+
+  try {
+    await saveFinishWorkout(workoutForDb, state.exercises, state.sets);
+
+    if (state.currentPlanInfo) {
+      console.log('Saving plan completion:', state.currentPlanInfo); 
+      
+      const completionResult = await completePlanWorkout({
+        userId: state.workout.user_id,
+        planId: state.currentPlanInfo.planId,
+        weekNumber: state.currentPlanInfo.weekNumber,
+        workoutOrder: state.currentPlanInfo.workoutOrder,
+        routineId: state.currentPlanInfo.routineId,
+        workoutId: state.workout.id,
+      });
+            
+      if (!completionResult.success) {
+        console.error('Failed to save plan completion:', completionResult.error);
+      }
+    }
+
+    dispatch({ type: 'RESET_WORKOUT' });
+  } catch (err) {
+    console.error(err);
+    Alert.alert('Save failed', 'Please check your connection and try again.');
+  }
+};
 
   return (
     <WorkoutContext.Provider value={{ state, dispatch, finishWorkout }}>

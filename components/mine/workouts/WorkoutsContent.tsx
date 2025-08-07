@@ -87,7 +87,7 @@ const WorkoutsContent: React.FC<WorkoutsContentProps> = ({
               exerciseCount={routine.exercise_ids.length}
               onStartRoutine={() => {
                 // router.push(`/routine/${routine.id}`)
-                console.log('starting routine')
+                // console.log('starting routine')
               }}
               onDeleteRoutine={() =>
                 Alert.alert(

@@ -15,9 +15,9 @@
 // import { formatTime, formatTimeOnlyMinutes } from '@/lib/helpers/DateTimeHelper';
 // import workouts from './workouts';
 // import ProgressCircle from '@/components/mine/home/ProgressCircle';
-// import { PlanWithWorkouts } from '@/types';
-// import { getActivePlan } from '@/lib/plans';
 // import PlanCard from '@/components/mine/home/PlanCard';
+// import { getActivePlan, PlanWithWorkouts } from '@/lib/plans';
+// import { getPlanProgress } from '@/lib/routine';
 
 // let { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -109,33 +109,53 @@
 //   };
 
 //   // Calculate current week and workout progress for active plan
-//   const getCurrentPlanProgress = () => {
-//     if (!activePlan) return null;
+//   // const getCurrentPlanProgress = () => {
+//   //   if (!activePlan) return null;
     
-//     // TODO: This is a simple implementation. You might want to store actual progress in your database
-//     // For now, we'll assume the user is on week 1, workout 1
-//     const currentWeek = 1;
-//     const totalWeeks = activePlan.total_weeks;
+//   //   // TODO: This is a simple implementation. You might want to store actual progress in your database
+//   //   // For now, we'll assume the user is on week 1, workout 1
+//   //   const currentWeek = 1;
+//   //   const totalWeeks = activePlan.total_weeks;
     
-//     // Group workouts by week
-//     const workoutsByWeek: { [week: number]: typeof activePlan.workouts } = {};
-//     activePlan.workouts.forEach(workout => {
-//       if (!workoutsByWeek[workout.week_number]) {
-//         workoutsByWeek[workout.week_number] = [];
-//       }
-//       workoutsByWeek[workout.week_number].push(workout);
-//     });
+//   //   // Group workouts by week
+//   //   const workoutsByWeek: { [week: number]: typeof activePlan.workouts } = {};
+//   //   activePlan.workouts.forEach(workout => {
+//   //     if (!workoutsByWeek[workout.week_number]) {
+//   //       workoutsByWeek[workout.week_number] = [];
+//   //     }
+//   //     workoutsByWeek[workout.week_number].push(workout);
+//   //   });
 
-//     const currentWeekWorkouts = workoutsByWeek[currentWeek] || [];
-//     const totalWorkoutsInCurrentWeek = currentWeekWorkouts.length;
+//   //   const currentWeekWorkouts = workoutsByWeek[currentWeek] || [];
+//   //   const totalWorkoutsInCurrentWeek = currentWeekWorkouts.length;
     
+//   //   return {
+//   //     currentWeek,
+//   //     totalWeeks,
+//   //     totalWorkoutsInCurrentWeek,
+//   //     nextWorkout: currentWeekWorkouts[0] // Assuming user hasn't completed any workouts yet
+//   //   };
+//   // };
+
+//   const getCurrentPlanProgress = async () => {
+//   if (!activePlan || !session?.user.id) return null;
+  
+//   const result = await getPlanProgress(activePlan.id, session.user.id);
+  
+//   if (result.success && result.progress) {
+//     const { progress } = result;
 //     return {
-//       currentWeek,
-//       totalWeeks,
-//       totalWorkoutsInCurrentWeek,
-//       nextWorkout: currentWeekWorkouts[0] // Assuming user hasn't completed any workouts yet
+//       currentWeek: progress.nextWorkout?.weekNumber || 1,
+//       totalWeeks: activePlan.total_weeks,
+//       completedWorkouts: progress.completedWorkouts,
+//       totalWorkouts: progress.totalWorkouts,
+//       nextWorkout: progress.nextWorkout,
+//       completionPercentage: Math.round((progress.completedWorkouts / progress.totalWorkouts) * 100),
 //     };
-//   };
+//   }
+  
+//   return null;
+// };
 
 //   useEffect(() => {
 //     async function fetchData() {
@@ -194,13 +214,43 @@
 
 //   // Handle plan card press
 //   const handlePlanCardPress = () => {
-//     if (activePlan) {
-//       // Navigate to plan details or workout screen
-//       router.push('/(protected)/(tabs)/workouts'); // Navigate to plans tab
+//     if (activePlan && planProgress) {
+//       // Start workout from current plan
+//       startWorkoutFromPlan();
 //     } else {
 //       // Navigate to create plan screen
 //       router.push('/(protected)/(tabs)/workouts'); // Navigate to plans tab to create new plan
 //     }
+//   };
+
+//   const startWorkoutFromPlan = () => {
+//     if (!activePlan || !planProgress) return;
+
+//     Alert.alert(
+//       'Start Workout from Plan',
+//       `Start "${planProgress.nextWorkout?.routine.name || 'workout'}" from ${activePlan.name}?`,
+//       [
+//         { text: 'Cancel', style: 'cancel' },
+//         {
+//           text: 'Start Workout',
+//           onPress: () => {
+//             // Navigate to active-workout with plan info
+//             router.push({
+//               pathname: '/active-workout',
+//               params: {
+//                 fromPlan: 'true',
+//                 planId: activePlan.id,
+//                 planName: activePlan.name,
+//                 routineId: planProgress.nextWorkout?.routine_id || '',
+//                 routineName: planProgress.nextWorkout?.routine.name || '',
+//                 weekNumber: planProgress.currentWeek.toString(),
+//                 workoutOrder: '1' // Assuming first workout for now
+//               }
+//             });
+//           }
+//         }
+//       ]
+//     );
 //   };
 
 //   if (loading) {
@@ -557,9 +607,10 @@
 //   },
 // });
 
+
 import Typo from '@/components/mine/Typo';
 import { spacingX, spacingY } from '@/constants/spacings';
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Calendar } from 'react-native-calendars';
 import ProgressChart70 from '@/assets/ProgressChart70.svg';
@@ -569,13 +620,15 @@ import WorkoutCard from '@/components/mine/WorkoutCard';
 import { useAuth } from '@/context/supabase-provider';
 import { fetchAllWorkoutDatesForUser } from '@/lib/workout';
 import ScreenWrapper from '@/components/mine/ScreenWrapper';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useWorkout } from '@/context/WorkoutProvider';
 import { formatTime, formatTimeOnlyMinutes } from '@/lib/helpers/DateTimeHelper';
 import workouts from './workouts';
 import ProgressCircle from '@/components/mine/home/ProgressCircle';
 import PlanCard from '@/components/mine/home/PlanCard';
 import { getActivePlan, PlanWithWorkouts } from '@/lib/plans';
+import { getPlanProgress } from '@/lib/routine';
+import { calculateProgressData } from '@/lib/helpers/HomeDataHelper';
 
 let { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -603,6 +656,20 @@ interface ProgressData {
   percentage: string;
 }
 
+type PlanProgress = {
+  currentWeek: number;
+  totalWeeks: number;
+  completedWorkouts: number;
+  totalWorkouts: number;
+  nextWorkout?: {
+    weekNumber: number;
+    workoutOrder: number;
+    routineId: string;
+    routineName: string;
+  };
+  completionPercentage: number;
+};
+
 // Reusable Progress Item Component
 const ProgressItem: React.FC<ProgressItemProps> = ({ title, percentage }) => (
   <View style={styles.progressItem}>
@@ -629,17 +696,17 @@ const Home: React.FC = () => {
   const [completedWorkoutDates, setCompletedWorkoutDates] = useState<{ [key: string]: any }>({});
   const [activePlan, setActivePlan] = useState<PlanWithWorkouts | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<boolean>(false);
+  const [planProgress, setPlanProgress] = useState<PlanProgress | null>(null);
 
   const [loading, setLoading] = useState<boolean>(false);
   const { session } = useAuth();
   const { state, dispatch } = useWorkout();
 
-  // TODO: dynamically
-  const progressData: ProgressData[] = [
-    { title: 'Daily', percentage: '70%' },
-    { title: 'Weekly', percentage: '40%' },
-    { title: 'Monthly', percentage: '20%' }
-  ];
+  const [progressData, setProgressData] = useState<ProgressData[]>([
+    { title: 'Daily', percentage: '0%' },
+    { title: 'Weekly', percentage: '0%' },
+    { title: 'Monthly', percentage: '0%' }
+  ]);
 
   // TODO: modal on day press (?)
   const onDayPress = (day: any) => {
@@ -655,45 +722,46 @@ const Home: React.FC = () => {
       const result = await getActivePlan(session.user.id);
       if (result.success && result.plan) {
         setActivePlan(result.plan);
+        // Fetch plan progress after getting active plan
+        await fetchPlanProgress(result.plan.id, result.plan.total_weeks);
       } else {
         setActivePlan(null);
+        setPlanProgress(null);
       }
     } catch (error) {
       console.error('Error fetching active plan:', error);
       setActivePlan(null);
+      setPlanProgress(null);
     } finally {
       setLoadingPlan(false);
     }
   };
 
-  // Calculate current week and workout progress for active plan
-  const getCurrentPlanProgress = () => {
-    if (!activePlan) return null;
-    
-    // TODO: This is a simple implementation. You might want to store actual progress in your database
-    // For now, we'll assume the user is on week 1, workout 1
-    const currentWeek = 1;
-    const totalWeeks = activePlan.total_weeks;
-    
-    // Group workouts by week
-    const workoutsByWeek: { [week: number]: typeof activePlan.workouts } = {};
-    activePlan.workouts.forEach(workout => {
-      if (!workoutsByWeek[workout.week_number]) {
-        workoutsByWeek[workout.week_number] = [];
-      }
-      workoutsByWeek[workout.week_number].push(workout);
-    });
+  const fetchPlanProgress = async (planId: string, planTotalWeeks: number) => {
+  if (!session?.user.id) return;
 
-    const currentWeekWorkouts = workoutsByWeek[currentWeek] || [];
-    const totalWorkoutsInCurrentWeek = currentWeekWorkouts.length;
+  try {
+    const result = await getPlanProgress(planId, session.user.id);
     
-    return {
-      currentWeek,
-      totalWeeks,
-      totalWorkoutsInCurrentWeek,
-      nextWorkout: currentWeekWorkouts[0] // Assuming user hasn't completed any workouts yet
-    };
-  };
+    if (result.success && result.progress) {
+      const { progress } = result;
+      const progressData: PlanProgress = {
+        currentWeek: progress.nextWorkout?.weekNumber || 1,
+        totalWeeks: planTotalWeeks, // ✅ Use the passed parameter
+        completedWorkouts: progress.completedWorkouts,
+        totalWorkouts: progress.totalWorkouts,
+        nextWorkout: progress.nextWorkout,
+        completionPercentage: Math.round((progress.completedWorkouts / progress.totalWorkouts) * 100),
+      };
+      setPlanProgress(progressData);
+    } else {
+      setPlanProgress(null);
+    }
+  } catch (error) {
+    console.error('Error fetching plan progress:', error);
+    setPlanProgress(null);
+  }
+};
 
   useEffect(() => {
     async function fetchData() {
@@ -750,6 +818,17 @@ const Home: React.FC = () => {
     fetchData();
   }, [session?.user.id]);
 
+  useFocusEffect(
+    useCallback(() => {
+      // Refresh plan data when screen comes into focus
+      if (session?.user.id && activePlan) {
+        fetchPlanProgress(activePlan.id, activePlan.total_weeks);
+        // Recalculate progress data
+        calculateProgressData(activePlan, session.user.id).then(setProgressData);
+      }
+    }, [session?.user.id, activePlan])
+  );
+
   // Handle plan card press
   const handlePlanCardPress = () => {
     if (activePlan && planProgress) {
@@ -764,9 +843,15 @@ const Home: React.FC = () => {
   const startWorkoutFromPlan = () => {
     if (!activePlan || !planProgress) return;
 
+    const nextWorkout = planProgress.nextWorkout;
+    if (!nextWorkout) {
+      Alert.alert('Plan Complete', 'You have completed all workouts in this plan!');
+      return;
+    }
+
     Alert.alert(
       'Start Workout from Plan',
-      `Start "${planProgress.nextWorkout?.routine.name || 'workout'}" from ${activePlan.name}?`,
+      `Start "${nextWorkout.routineName}" from ${activePlan.name}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -779,10 +864,10 @@ const Home: React.FC = () => {
                 fromPlan: 'true',
                 planId: activePlan.id,
                 planName: activePlan.name,
-                routineId: planProgress.nextWorkout?.routine_id || '',
-                routineName: planProgress.nextWorkout?.routine.name || '',
-                weekNumber: planProgress.currentWeek.toString(),
-                workoutOrder: '1' // Assuming first workout for now
+                routineId: nextWorkout.routineId,
+                routineName: nextWorkout.routineName,
+                weekNumber: nextWorkout.weekNumber.toString(),
+                workoutOrder: nextWorkout.workoutOrder.toString()
               }
             });
           }
@@ -800,8 +885,6 @@ const Home: React.FC = () => {
       </ScreenWrapper>
     );
   }
-
-  const planProgress = getCurrentPlanProgress();
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -907,9 +990,9 @@ const Home: React.FC = () => {
                   ) : activePlan && planProgress ? (
                     <PlanCard
                       title={activePlan.name}
-                      subtitle={`Week ${planProgress.currentWeek} of ${planProgress.totalWeeks}`}
-                      weekInfo={`${planProgress.totalWorkoutsInCurrentWeek} workouts`}
-                      rightText={planProgress.nextWorkout ? planProgress.nextWorkout.routine.name : ""}
+                      subtitle={`${planProgress.completedWorkouts}/${planProgress.totalWorkouts} workouts completed`}
+                      weekInfo={`Week ${planProgress.currentWeek} of ${planProgress.totalWeeks}`}
+                      rightText={planProgress.nextWorkout ? planProgress.nextWorkout.routineName : "Complete!"}
                       onPress={handlePlanCardPress}
                     />
                   ) : (
@@ -1144,3 +1227,4 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
 });
+
